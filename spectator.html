@@ -220,11 +220,12 @@
                     <div class="school-logo">
                         ${getSchoolLogoHTML(p.school)}
                     </div>
-                    <div class="team-score-section">
-                        <div class="score-label">Score</div>
-                        <div class="score-val">${p.score || 0}</div>
-                    </div>
                 `;
+                    // remove score for now sa spectator
+                    // <div class="team-score-section">
+                    //     <div class="score-label">Score</div>
+                    //     <div class="score-val">${p.score || 0}</div>
+                    // </div>
                 containerEl.appendChild(column);
             });
         });
