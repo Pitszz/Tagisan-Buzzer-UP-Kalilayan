@@ -2,38 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tagisan 41 Quiz Show - Player Buzzer</title>
+    <link rel="stylesheet" href="tagisan.css">
+    <!-- Preload buzzer faces so state changes never flash blank -->
+    <link rel="preload" as="image" href="assets/buzzer/buzzer-ready.png">
+    <link rel="preload" as="image" href="assets/buzzer/buzzer-buzzed.png">
+    <link rel="preload" as="image" href="assets/buzzer/buzzer-locked.png">
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #111827;
-            --card-bg: #f9fafb;
-            --border-color: #e5e7eb;
-            --primary-color: #2563eb;
-            --danger-color: #dc2626;
-            --success-color: #16a34a;
-            --radius: 16px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
+            display: flex;  
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px 20px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         .header {
@@ -42,103 +28,44 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 3px solid var(--red);
             padding-bottom: 12px;
         }
 
         .player-tag {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #4b5563;
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: var(--red);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
         }
 
         .player-tag span {
-            color: var(--text-color);
+            color: var(--red);
         }
 
-        .back-link {
-            font-size: 0.85rem;
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-        .back-link:hover {
-            text-decoration: underline;
+        .player-tag .player-badge-pill,
+        .player-tag .player-badge-pill span {
+            color: var(--cream);
         }
 
-        /* Main Buzzer Container */
-        .buzzer-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            max-width: 480px;
-            gap: 24px;
-            padding: 20px 0;
-        }
-
-        .status-banner {
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-align: center;
-            padding: 10px 20px;
-            border-radius: 8px;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            width: 100%;
-        }
-
-        /* Giant Buzzer Button */
-        .buzzer-btn {
-            width: 260px;
-            height: 260px;
-            border-radius: 50%;
-            border: 8px solid #e5e7eb;
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            color: white;
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
-            transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            outline: none;
-        }
-
-        .buzzer-btn:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-
-        /* Buzzer States */
-        .buzzer-btn.buzzed {
-            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
-            border-color: #fca5a5;
-            box-shadow: 0 0 35px rgba(239, 68, 68, 0.7);
-            animation: pulse 1.5s infinite;
-        }
-
-        .buzzer-btn.locked {
-            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
-            border-color: #d1d5db;
-            box-shadow: none;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-            100% { transform: scale(1); }
+        .player-badge-pill {
+            background-color: var(--red);
+            padding: 2px 8px;
+            display: inline-block;
+            margin-left: 6px;
         }
 
         .footer-info {
-            font-size: 0.85rem;
-            color: #6b7280;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            color: var(--red);
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 8px 0;
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -146,16 +73,18 @@
 
     <div class="header">
         <div class="player-tag">
-            <span id="displaySchool">Loading School...</span> &bull; <span>#<span id="displayNumber">0</span></span>
+            <span id="displaySchool">Loading School...</span>
+            <span class="player-badge-pill">#<span id="displayNumber">0</span></span>
         </div>
         <a href="#" onclick="confirmLeave(event)" class="back-link">Leave</a>
     </div>
 
     <div class="buzzer-container">
-        <div id="statusBanner" class="status-banner" style="color: #6b7280;">LOCKED OUT</div>
+        <!-- Status Banner: Torn Paper Tape Strip -->
+        <div id="statusBanner" class="status-banner">LOCKED OUT</div>
         
-        <!-- The Giant Buzzer -->
-        <button id="buzzerBtn" class="buzzer-btn locked" disabled onclick="pressBuzzer()">BUZZ</button>
+        <!-- The Giant Responsive Buzzer Disc -->
+        <button id="buzzerBtn" class="buzzer-btn locked" aria-label="Buzz" disabled onclick="pressBuzzer()">BUZZ</button>
     </div>
 
     <div class="footer-info">
@@ -285,17 +214,23 @@
             if (buzzerState === 'ready') {
                 btn.disabled = false;
                 banner.textContent = "READY";
-                banner.style.color = "var(--text-color)";
+                banner.style.color = "var(--red)";
+                banner.style.backgroundColor = "var(--tape)";
+                banner.style.borderColor = "var(--red)";
             } else if (buzzerState === 'buzzed') {
                 btn.classList.add('buzzed');
                 btn.disabled = true;
                 banner.textContent = "YOU BUZZED FIRST!";
-                banner.style.color = "var(--danger-color)";
+                banner.style.color = "var(--cream)";
+                banner.style.backgroundColor = "var(--red)";
+                banner.style.borderColor = "var(--cream)";
             } else if (buzzerState === 'locked') {
                 btn.classList.add('locked');
                 btn.disabled = true;
                 banner.textContent = "LOCKED OUT";
-                banner.style.color = "#4b5563";
+                banner.style.color = "var(--halftone)";
+                banner.style.backgroundColor = "var(--newsprint)";
+                banner.style.borderColor = "var(--halftone)";
             }
         }
 
@@ -304,11 +239,6 @@
         socket.on('updateState', (gameState) => {
             const me = gameState.players.find(p => p.school === school && p.number == number);
             if (me) {
-                // Check if state changed from buzzed to locked due to correct/wrong evaluation
-                if (previousBuzzerState === 'buzzed' && me.status === 'locked') {
-                    // If their score increased, it was correct, otherwise wrong (or you can trigger based on host action)
-                }
-
                 buzzerState = me.status;
                 previousBuzzerState = buzzerState;
                 updateBuzzerUI();

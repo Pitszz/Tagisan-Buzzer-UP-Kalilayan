@@ -4,211 +4,163 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tagisan 41 Quiz Show - Main Menu</title>
+    <link rel="stylesheet" href="tagisan.css">
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #111827;
-            --card-bg: #f9fafb;
-            --border-color: #e5e7eb;
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --radius: 12px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px 0 0 0;
         }
 
         .container {
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin: auto 0;
+            padding: 16px;
         }
 
-        /* Logo Placeholder */
-        .logo-container {
-            width: 64px;
-            height: 64px;
-            background-color: var(--border-color);
-            border-radius: 50%;
+        /* Dual Logo Header: Inverted Triangle + UP Kalilayan Seal */
+        .logo-header {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 16px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
-        /* Inverted Triangle for Logo */
-        .temp-triangle {
-            width: 0;
-            height: 0;
-            border-left: 16px solid transparent;
-            border-right: 16px solid transparent;
-            border-top: 28px solid var(--text-color);
+        .logo-container {
+            width: 76px;
+            height: 76px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .logo-triangle-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(2px 3px 0 var(--newsprint));
+        }
+
+        .logo-seal-img {
+            width: 68px;
+            height: 68px;
+            object-fit: contain;
+        }
+
+        .title-group {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .title-kicker {
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            letter-spacing: 0.12em;
+            color: var(--red);
+            text-transform: uppercase;
+            font-weight: 900;
+            display: block;
+            margin-bottom: 4px;
         }
 
         h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 24px;
-            text-align: center;
-            letter-spacing: -0.025em;
+            font-size: clamp(2rem, 6vw, 2.75rem);
+            line-height: 0.9;
         }
 
-        /* Card Layout */
-        .card {
-            width: 100%;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-            margin-bottom: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+        .subtitle-tagline {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            color: var(--red);
+            letter-spacing: 0.08em;
+            margin-top: 6px;
+            font-weight: 900;
+            opacity: 0.85;
+            text-transform: uppercase;
         }
 
         .menu-options {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
         }
 
-        /* Buttons & Inputs */
-        button, select, input {
-            width: 100%;
-            padding: 12px 16px;
-            font-size: 0.95rem;
-            border-radius: var(--radius);
-            border: 1px solid var(--border-color);
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        button {
-            background-color: var(--text-color);
-            color: #ffffff;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        button.primary {
-            background-color: var(--primary-color);
-        }
-        button.primary:hover {
-            background-color: var(--primary-hover);
-        }
-
-        button.secondary {
-            background-color: transparent;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-        }
-        button.secondary:hover {
-            background-color: var(--border-color);
-        }
-
-        select, input {
-            background-color: #ffffff;
-            color: var(--text-color);
-        }
-
-        select:focus, input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-        }
-
-        label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #4b5563;
-            margin-bottom: -8px;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .info-text {
-            font-size: 0.9rem;
-            color: #6b7280;
-            text-align: center;
-            line-height: 1.4;
+        .menu-btn-join {
+            font-size: 1.25rem;
+            padding: 18px 20px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Top Logo -->
-        <div class="logo-container" id="logoWrapper">
-            <div class="temp-triangle"></div>
+        <!-- Dual Brand Mark: Inverted Triangle Logo & UP Kalilayan Seal -->
+        <div class="logo-header">
+            <div class="logo-container" id="logoWrapper">
+                <img src="assets/brand/tagisan-logo.png" alt="Tagisan 41 Triangle Logo" class="logo-triangle-img" onerror="this.outerHTML='<div class=\'temp-triangle\'></div>'">
+            </div>
+            <div class="logo-container">
+                <img src="assets/brand/upk-logo.png" alt="UP Kalilayan Seal" class="logo-seal-img" onerror="this.style.display='none'">
+            </div>
         </div>
 
-        <h1>Tagisan 41 Quiz Show</h1>
+        <div class="title-group">
+            <span class="title-kicker">UP KALILAYAN PRESENTS</span>
+            <h1>Tagisan 41<br>Quiz Show</h1>
+            <div class="subtitle-tagline">Paghasa ng Bayan &bull; 41st Edition</div>
+        </div>
 
         <!-- PERSISTENT PROFILE QUICK-JOIN CARD (Hidden by default) -->
-        <div id="savedProfileCard" class="card hidden">
-            <div class="info-text" style="font-weight: 600; color: var(--text-color);">
+        <div id="savedProfileCard" class="card card-taped hidden">
+            <div class="tape-strip" style="align-self: flex-start; margin-bottom: -6px;">PROFILE FOUND</div>
+            <div class="info-text" style="font-size: 1.15rem; font-weight: 900; text-transform: uppercase;">
                 Welcome back!
             </div>
             <div id="savedProfileText" class="info-text"></div>
-            <button class="primary" onclick="joinWithSavedProfile()">Rejoin</button>
+            <button class="primary menu-btn-join" onclick="joinWithSavedProfile()">Rejoin</button>
             <button class="secondary" onclick="clearSavedProfile()">Use Different Profile</button>
         </div>
 
-        <!-- VIEW 1: MAIN MENU -->
-        <div id="mainMenu" class="card">
+        <!-- VIEW 1: MAIN MENU (CHUNKY TORN-PAPER SLABS) -->
+        <div id="mainMenu" class="card card-taped">
             <div class="menu-options">
-                <button class="primary" onclick="switchView('join')">JOIN</button>
-                <button onclick="switchView('host')">HOST</button>
+                <button class="primary menu-btn-join" onclick="switchView('join')">JOIN</button>
+                <button class="secondary" onclick="switchView('host')">HOST</button>
                 <button class="secondary" onclick="switchView('spectate')">SPECTATE</button>
             </div>
         </div>
 
         <!-- VIEW 2: JOIN CONFIGURATION -->
-        <div id="joinView" class="card hidden">
+        <div id="joinView" class="card card-taped hidden">
             <label for="schoolSelect">Select School</label>
             <select id="schoolSelect" onchange="handleSchoolChange()">
                 <option value="" disabled selected>-- Choose your school --</option>
             </select>
 
             <!-- Custom Input for 'Other' (Hidden by default) -->
-            <div id="customSchoolContainer" class="hidden" style="margin-top: 4px;">
-                <label for="customSchoolInput" style="display: block; margin-bottom: 6px;">School Name</label>
-                <input type="text" id="customSchoolInput" placeholder="e.g. UP Diliman, UP Manila...">
+            <div id="customSchoolContainer" class="hidden" style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
+                <label for="customSchoolInput" style="display: block;">School Name</label>
+                <input type="text" id="customSchoolInput" placeholder="e.g. Quezon National High School...">
             </div>
 
             <label for="playerNumber" style="margin-top: 4px;">Assigned Number</label>
             <input type="number" id="playerNumber" placeholder="e.g. 1, 2, 3..." min="1">
 
-            <button class="primary" onclick="handleJoinGame()">Connect to Game</button>
+            <button class="primary menu-btn-join" onclick="handleJoinGame()">Connect to Game</button>
             <button class="secondary" onclick="switchView('mainMenu')">Back</button>
         </div>
 
         <!-- VIEW 3: WAITING FOR HOST STATE -->
-        <div id="waitingView" class="card hidden">
+        <div id="waitingView" class="card card-taped hidden">
             <div class="info-text">
                 <p id="waitingStatusText">Checking for active hosted game...</p>
             </div>
@@ -216,6 +168,12 @@
         </div>
 
     </div>
+
+    <!-- Red Ink-Splash Footer Strip -->
+    <footer class="tagisan-footer">
+        <span>Tagisan 41 &bull; UP Kalilayan</span>
+        <a href="https://instagram.com/upkalilayan" target="_blank" rel="noopener noreferrer">@UPKALILAYAN</a>
+    </footer>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>

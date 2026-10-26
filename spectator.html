@@ -4,202 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tagisan 41 Quiz Show - Spectator Display</title>
+    <link rel="stylesheet" href="tagisan.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #111827;
-            --border-color: #e5e7eb;
-            --success-glow: rgba(22, 163, 74, 0.12);
-            --success-bg: #f0fdf4;
-            --success-border: #16a34a;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            padding: 30px;
+            padding: 24px 32px;
+            background-color: var(--cream);
         }
 
-        .container {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
+        .spectator-logos img {
+            height: 64px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .spectator-header {
             display: flex;
-            flex-direction: column;
-            gap: 24px;
-            flex: 1;
-        }
-
-        /* Header */
-        .header {
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 16px;
-        }
-
-        .header h1 {
-            font-size: 2.25rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-        }
-
-        .subtitle {
-            font-size: 1rem;
-            color: #6b7280;
-            margin-top: 2px;
-            font-weight: 500;
-        }
-
-        /* Evenly Split Teams Container with Line Separators */
-        .teams-container {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: stretch;
-            flex: 1;
-            background: #ffffff;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            overflow: hidden;
-        }
-
-        /* Individual Team Column */
-        .team-column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 32px 16px;
-            text-align: center;
-            position: relative;
-            transition: background-color 0.3s ease;
+            border-bottom: 4px solid var(--red);
+            padding-bottom: 14px;
+            margin-bottom: 20px;
         }
 
-        /* Subtle Line Separator between columns (except the last one) */
-        .team-column:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 15%;
-            height: 70%;
-            width: 1px;
-            background-color: var(--border-color);
-        }
-
-        /* Green Glow Effect when Buzzed First */
-        .team-column.buzzed {
-            background-color: var(--success-bg);
-        }
-        .team-column.buzzed .team-number-badge {
-            background-color: #dcfce7;
-            color: #166534;
-            border-color: var(--success-border);
-        }
-
-        /* Top Grouping: Name & Number close together */
-        .team-header-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .team-school {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--text-color);
-            line-height: 1.25;
-            max-width: 200px;
-        }
-
-        .team-number-badge {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #4b5563;
-            background: #f3f4f6;
-            padding: 2px 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-        }
-
-        /* Middle Section: Logo (Prominent) */
-        .school-logo {
-            width: 130px;
-            height: 130px;
-            border-radius: 50%;
-            background-color: #111827; /* Default solid black circle */
-            border: 3px solid var(--border-color);
+        .spectator-brand-left {
             display: flex;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-            margin: auto 0;
+            gap: 16px;
         }
 
-        .school-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Bottom Section: Score */
-        .team-score-section {
+        .spectator-brand-text {
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
 
-        .score-label {
-            font-size: 0.65rem;
+        .spectator-brand-text h1 {
+            font-size: clamp(2rem, 3.5vw, 3.2rem);
+            line-height: 0.9;
+            text-align: left;
+            margin: 0;
+        }
+
+        .spectator-sub {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            color: var(--red);
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: #6b7280;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-        }
-
-        .score-val {
-            font-size: 3rem;
             font-weight: 900;
-            color: var(--text-color);
-            line-height: 1;
+            opacity: 0.85;
         }
 
-        .waiting-message {
-            text-align: center;
-            padding: 80px;
-            color: #9ca3af;
-            font-style: italic;
-            font-size: 1.2rem;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .round-status-tag {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 900;
+            color: var(--red);
+            background: var(--tape);
+            border: 2px solid var(--red);
+            padding: 8px 18px;
+            transform: rotate(1deg);
+            box-shadow: 2px 2px 0 var(--newsprint);
+            letter-spacing: 0.05em;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Header Title -->
-        <div class="header">
-            <h1 id="displayTitle">Tagisan 41 Quiz Show</h1>
-            <div class="subtitle">UP Kalilayan</div>
+    <div class="spectator-stage">
+        <!-- Top Stage Header -->
+        <div class="spectator-header">
+            <div class="spectator-brand-left">
+                <div class="spectator-logos">
+                    <img src="assets/brand/logo-triangle.png" alt="Tagisan 41" onerror="this.style.display='none'">
+                    <img src="assets/brand/kalilayan-seal.png" alt="UP Kalilayan" onerror="this.style.display='none'">
+                </div>
+                <div class="spectator-brand-text">
+                    <h1 id="displayTitle">Tagisan 41 Quiz Show</h1>
+                    <div class="spectator-sub">UP Kalilayan &bull; Paghasa ng Bayan</div>
+                </div>
+            </div>
+            <div class="round-status-tag">FINAL ROUND</div>
         </div>
 
-        <!-- Teams Split Container -->
+        <!-- Teams Split Container (Up to 5 Columns) -->
         <div id="teamsContainer" class="teams-container">
             <!-- Dynamically populated -->
         </div>
@@ -212,22 +104,13 @@
         function getSchoolLogoHTML(schoolName) {
             if (!schoolName) return '';
 
-            let logoFilename = '';
-            const lower = schoolName.toLowerCase();
+            // "Quezon Science High School" -> "quezon-science-high-school"
+            const slug = schoolName
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
 
-            if (lower.includes('diliman') || lower.includes('up diliman')) {
-                logoFilename = 'up.png';
-            } else if (lower.includes('ateneo')) {
-                logoFilename = 'ateneo.png';
-            } else if (lower.includes('la salle') || lower.includes('dlsu')) {
-                logoFilename = 'dlsu.png';
-            }
-
-            if (logoFilename) {
-                return `<img src="assets/logos/${logoFilename}" alt="${schoolName}" onerror="this.style.display='none'">`;
-            }
-
-            return ''; // Defaults to empty inside the black circle container
+            return `<img src="assets/logos/${slug}.png" alt="${schoolName}" onerror="this.style.display='none'">`;
         }
 
         // Initialize the browser's Audio Context
@@ -320,7 +203,7 @@
             containerEl.innerHTML = '';
 
             if (!gameState.players || gameState.players.length === 0) {
-                containerEl.innerHTML = `<div class="waiting-message">Waiting for teams to join the game...</div>`;
+                containerEl.innerHTML = `<div class="waiting-message" style="display:flex; align-items:center; justify-content:center; width:100%; font-family:var(--font-display); font-size:1.3rem; color:var(--halftone); text-transform:uppercase; letter-spacing:0.04em;">Waiting for finalist teams to connect to game...</div>`;
                 return;
             }
 
@@ -336,6 +219,10 @@
                     </div>
                     <div class="school-logo">
                         ${getSchoolLogoHTML(p.school)}
+                    </div>
+                    <div class="team-score-section">
+                        <div class="score-label">Score</div>
+                        <div class="score-val">${p.score || 0}</div>
                     </div>
                 `;
                 containerEl.appendChild(column);

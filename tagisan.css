@@ -1,0 +1,947 @@
+/**
+ * TAGISAN 41 QUIZ SHOW BUZZER - SHARED DESIGN SYSTEM
+ * UP KALILAYAN - "PAGHASA NG BAYAN"
+ * Protest-poster / Screen-printed Zine Visual Identity
+ */
+
+/* ----------------------------------------------------
+   1. SELF-HOSTED TYPOGRAPHY & DESIGN TOKENS
+   ---------------------------------------------------- */
+@font-face {
+  font-family: 'Archivo';
+  src: url('assets/fonts/archivo-latin-800-normal.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Archivo';
+  src: url('assets/fonts/archivo-latin-900-normal.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter Tight';
+  src: url('assets/fonts/inter-tight-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter Tight';
+  src: url('assets/fonts/inter-tight-latin-800-normal.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Strict Palette: Flat ink red & newsprint paper (No gradients, no green/blue/black) */
+  --red: #D43C32;
+  --red-deep: #A82C24;
+  --cream: #FAF9F0;
+  --newsprint: #D6D1CB;
+  --halftone: #B8B0A8;
+  --tape: #FFFFFF;
+  --tape-shadow: rgba(184, 176, 168, 0.45);
+  --paper-edge: #E0DBD3;
+
+  /* Typography */
+  --font-display: 'Archivo', 'Inter Tight', 'Haas Grot Text R Web', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Inter Tight', 'Archivo', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ----------------------------------------------------
+   2. GLOBAL RESET & BASE STYLES
+   ---------------------------------------------------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  min-height: 100vh;
+  background-color: var(--cream);
+  color: var(--red);
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* Authentic Paper Grain & Faint Halftone Background */
+body {
+  background-color: var(--cream);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(214, 209, 203, 0.3) 1px, transparent 1px),
+    radial-gradient(circle at 90% 80%, rgba(214, 209, 203, 0.3) 1px, transparent 1px),
+    repeating-linear-gradient(45deg, transparent, transparent 18px, rgba(214, 209, 203, 0.08) 18px, rgba(214, 209, 203, 0.08) 20px);
+  background-size: 32px 32px, 32px 32px, auto;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Subtle overall paper fiber texture overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ----------------------------------------------------
+   3. TYPOGRAPHY & HEADINGS
+   ---------------------------------------------------- */
+h1, h2, h3, .heading-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: var(--red);
+}
+
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+}
+
+/* ----------------------------------------------------
+   4. TORN PAPER & TAPE MOTIFS
+   ---------------------------------------------------- */
+/* Jagged Torn Paper Silhouette */
+.torn-paper {
+  background: var(--cream);
+  border: 1px solid var(--paper-edge);
+  position: relative;
+  clip-path: polygon(
+    0% 2px, 3% 0px, 7% 3px, 12% 1px, 18% 4px, 24% 1px, 30% 3px, 37% 0px, 45% 3px,
+    52% 1px, 60% 4px, 68% 1px, 76% 3px, 83% 0px, 91% 3px, 97% 1px, 100% 3px,
+    100% calc(100% - 2px), 96% 100%, 90% calc(100% - 3px), 82% calc(100% - 1px),
+    74% calc(100% - 4px), 66% calc(100% - 1px), 58% calc(100% - 3px), 50% 100%,
+    42% calc(100% - 3px), 34% calc(100% - 1px), 26% calc(100% - 4px), 18% calc(100% - 1px),
+    10% calc(100% - 3px), 3% 100%, 0% calc(100% - 2px)
+  );
+}
+
+/* Masking Tape Strips */
+.tape-strip {
+  display: inline-block;
+  background: var(--tape);
+  color: var(--red);
+  padding: 4px 14px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  transform: rotate(-1.5deg);
+  border: 1px solid rgba(214, 209, 203, 0.7);
+  box-shadow: 1px 2px 0 var(--tape-shadow);
+  position: relative;
+}
+
+/* Masking tape on card corners */
+.card-taped {
+  position: relative;
+}
+.card-taped::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  right: 18px;
+  width: 70px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(214, 209, 203, 0.6);
+  transform: rotate(3deg);
+  box-shadow: 0 1px 2px rgba(184, 176, 168, 0.4);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ----------------------------------------------------
+   5. CARDS & CONTAINERS
+   ---------------------------------------------------- */
+.card {
+  width: 100%;
+  background-color: var(--cream);
+  border: 2px solid var(--red);
+  padding: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 4px 4px 0 var(--newsprint);
+}
+
+/* ----------------------------------------------------
+   6. BUTTONS & CONTROLS (ZINE SLABS)
+   ---------------------------------------------------- */
+button, select, input {
+  width: 100%;
+  padding: 14px 18px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  border: 2px solid var(--red);
+  outline: none;
+  transition: transform 0.08s ease, background-color 0.1s ease;
+  border-radius: 0; /* Anti-pill: sharp protest zine cuts */
+}
+
+button {
+  background-color: var(--cream);
+  color: var(--red);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--red);
+}
+
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--red);
+}
+
+/* Primary Chunky Red Slab */
+button.primary {
+  background-color: var(--red);
+  color: var(--cream);
+  border-color: var(--red);
+  box-shadow: 3px 3px 0 var(--red-deep);
+}
+button.primary:hover {
+  background-color: var(--red-deep);
+  box-shadow: 4px 4px 0 var(--red-deep);
+}
+button.primary:active {
+  background-color: var(--red-deep);
+  box-shadow: 1px 1px 0 var(--red-deep);
+}
+
+/* Secondary Cream Slab with Red Border */
+button.secondary {
+  background-color: var(--cream);
+  color: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: 3px 3px 0 var(--newsprint);
+}
+button.secondary:hover {
+  background-color: #F4F1E6;
+  box-shadow: 4px 4px 0 var(--newsprint);
+}
+
+/* Form Inputs */
+select, input {
+  background-color: var(--cream);
+  color: var(--red);
+  border: 2px solid var(--red);
+  border-bottom: 4px solid var(--red);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+}
+input::placeholder {
+  color: var(--halftone);
+  font-style: italic;
+  text-transform: none;
+}
+select:focus, input:focus {
+  background-color: #FFFFFF;
+  border-color: var(--red);
+  outline: 2px solid var(--red);
+}
+
+label {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: -10px;
+  display: block;
+}
+
+.back-link {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: var(--red);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 2px solid var(--red);
+  padding-bottom: 2px;
+}
+.back-link:hover {
+  background-color: var(--red);
+  color: var(--cream);
+}
+
+/* ----------------------------------------------------
+   7. STATUS SEMANTICS
+   ---------------------------------------------------- */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--red);
+}
+
+.player-status-sub {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-top: 4px;
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--red);
+}
+
+/* READY: Solid Red ink */
+.player-status-sub.ready {
+  background-color: var(--red);
+  color: var(--cream);
+  border-color: var(--red);
+}
+
+/* BUZZED: Inverted red with bold pulse */
+.player-status-sub.buzzed {
+  background-color: var(--red-deep);
+  color: var(--cream);
+  border-color: var(--red);
+  animation: inkPulse 1.2s infinite;
+}
+
+/* LOCKED: Desaturated newsprint grey with tape vibe */
+.player-status-sub.locked {
+  background-color: var(--newsprint);
+  color: var(--halftone);
+  border-color: var(--halftone);
+  text-decoration: line-through;
+}
+
+@keyframes inkPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* ----------------------------------------------------
+   8. PLAYER BUZZER (MOBILE TOUCH 1-THUMB)
+   ---------------------------------------------------- */
+.buzzer-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 480px;
+  gap: 28px;
+  padding: 20px 0;
+}
+
+/* Status Banner: Torn Paper Tape Strip */
+.status-banner {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  text-align: center;
+  padding: 12px 24px;
+  background: var(--tape);
+  color: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: 3px 3px 0 var(--newsprint);
+  width: 100%;
+  transform: rotate(-0.5deg);
+}
+
+/* Responsive Giant Buzzer (image-based faces)
+   One PNG per state, in assets/buzzer/:
+     ready  -> buzzer-ready.png   (no extra class on the button)
+     buzzed -> buzzer-buzzed.png  (.buzzed)
+     locked -> buzzer-locked.png  (.locked)
+   Pressed feedback re-uses the ready image (shrinks + darkens). */
+.buzzer-btn {
+  --buzzer-label-color: transparent; /* set to var(--cream) to show the "BUZZ" text on top of the image */
+
+  width: min(72vw, 300px);
+  height: min(72vw, 300px);
+  min-width: 240px;
+  min-height: 240px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  background-image: url('assets/buzzer/buzzer-ready.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  color: var(--buzzer-label-color);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 3.25rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.06s ease, filter 0.06s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Pressed (finger down while ready) */
+.buzzer-btn:active:not(:disabled) {
+  transform: scale(0.95);
+  filter: brightness(0.88);
+}
+
+/* State: Buzzed first (pulsing) */
+.buzzer-btn.buzzed {
+  background-image: url('assets/buzzer/buzzer-buzzed.png');
+  animation: inkPulse 1.2s infinite ease-in-out;
+  cursor: default;
+}
+
+/* State: Locked out */
+.buzzer-btn.locked {
+  background-image: url('assets/buzzer/buzzer-locked.png');
+  cursor: not-allowed;
+}
+
+/* ----------------------------------------------------
+   9. HOST DASHBOARD STYLES
+   ---------------------------------------------------- */
+.game-title-input {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  background: var(--tape);
+  color: var(--red);
+  border: 2px solid var(--red);
+  transform: rotate(-0.5deg);
+  width: 280px;
+  outline: none;
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+/* Player Row as Torn Paper Strip */
+.player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--cream);
+  border: 2px solid var(--red);
+  padding: 12px 18px;
+  box-shadow: 3px 3px 0 var(--newsprint);
+  position: relative;
+}
+
+.player-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.number-box {
+  background-color: var(--red);
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 6px 12px;
+  min-width: 54px;
+  text-align: center;
+  border: 1px solid var(--red-deep);
+  display: inline-block;
+  letter-spacing: -0.02em;
+}
+
+.player-info-text span {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  display: block;
+  color: var(--red);
+  line-height: 1.1;
+}
+
+.player-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.score-block {
+  text-align: right;
+}
+.score-label {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  color: var(--red);
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+.score-val {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.score-controls {
+  display: flex;
+  background: var(--cream);
+  border: 2px solid var(--red);
+}
+
+.btn-score {
+  width: 36px;
+  height: 38px;
+  background: transparent;
+  border: none;
+  color: var(--red);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-score:hover {
+  background: var(--red);
+  color: var(--cream);
+}
+.btn-score:first-child {
+  border-right: 2px solid var(--red);
+}
+
+/* Active Raiser Popup: Red Ink Bar Anchored at Bottom */
+.active-raiser-popup {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 760px;
+  background-color: var(--red);
+  color: var(--cream);
+  border: 3px solid var(--cream);
+  padding: 16px 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), 4px 4px 0 var(--red-deep);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 99;
+}
+
+.active-raiser-popup.hidden {
+  display: none !important;
+}
+
+.raiser-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.raiser-tag {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cream);
+  opacity: 0.9;
+}
+
+.raiser-name {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--cream);
+  line-height: 1.1;
+}
+
+.raiser-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-eval {
+  padding: 10px 18px;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  border: 2px solid var(--cream);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+.btn-eval.correct {
+  background-color: var(--cream);
+  color: var(--red);
+}
+.btn-eval.correct:hover {
+  background-color: #FFFFFF;
+}
+.btn-eval.wrong {
+  background-color: transparent;
+  color: var(--cream);
+  border-color: var(--cream);
+}
+.btn-eval.wrong:hover {
+  background-color: var(--red-deep);
+}
+
+/* Master Controls Bar: Fixed Bottom Tape Dock */
+.master-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 760px;
+  background: var(--tape);
+  border: 3px solid var(--red);
+  padding: 12px 20px;
+  box-shadow: 4px 6px 0 var(--newsprint);
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Added gap to neatly space all 3 buttons */
+  z-index: 100;
+}
+
+
+button.control-btn {
+  padding: 10px 16px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  border: 2px solid var(--red);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Ensures the icon and text stay centered */
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0 var(--newsprint);
+}
+
+button.control-btn.lock {
+  background-color: var(--newsprint);
+  color: var(--red);
+}
+
+button.control-btn.unlock {
+  background-color: var(--red);
+  color: var(--cream);
+}
+
+button.control-btn.reset {
+  background-color: var(--cream);
+  color: var(--red);
+  border-style: dashed;
+  padding: 10px 10px;
+  flex: 1; /* This stretches the button to fill the remaining horizontal space */
+}
+
+/* ----------------------------------------------------
+   10. SPECTATOR DISPLAY (PROJECTOR 16:9 VIEW)
+   ---------------------------------------------------- */
+.spectator-stage {
+  width: 100%;
+  max-width: 1540px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* Spectator Brand Banner */
+.spectator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 4px solid var(--red);
+  padding-bottom: 16px;
+  position: relative;
+}
+
+.spectator-logos {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.spectator-titles {
+  text-align: right;
+}
+
+.spectator-titles h1 {
+  font-size: clamp(2.2rem, 3.8vw, 3.6rem);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+}
+
+.spectator-tagline {
+  font-family: var(--font-display);
+  font-size: clamp(0.75rem, 1.2vw, 1rem);
+  font-weight: 900;
+  color: var(--red);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
+/* Evenly Split Teams Container */
+.teams-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: stretch;
+  flex: 1;
+  background: var(--cream);
+  border: 4px solid var(--red);
+  box-shadow: 8px 8px 0 var(--newsprint);
+  overflow: hidden;
+  min-height: 580px;
+}
+
+/* Individual Team Column */
+.team-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 18px;
+  text-align: center;
+  position: relative;
+  border-right: 3px solid var(--red);
+  background-color: var(--cream);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.team-column:last-child {
+  border-right: none;
+}
+
+/* Buzzed First Highlight: Complete Invert to Solid Ink-Red */
+.team-column.buzzed {
+  background-color: var(--red) !important;
+  color: var(--cream) !important;
+  animation: teamBuzzedPulse 1.4s infinite ease-in-out;
+}
+.team-column.buzzed .team-school {
+  color: var(--cream) !important;
+}
+.team-column.buzzed .team-number-badge {
+  background-color: var(--cream) !important;
+  color: var(--red) !important;
+  border-color: var(--cream) !important;
+}
+.team-column.buzzed .school-logo {
+  border-color: var(--cream) !important;
+  box-shadow: 0 0 0 4px var(--red), 0 0 0 8px var(--cream) !important;
+}
+.team-column.buzzed .score-label {
+  color: var(--cream) !important;
+  opacity: 0.9;
+}
+.team-column.buzzed .score-val {
+  color: var(--cream) !important;
+  transform: scale(1.08);
+}
+
+@keyframes teamBuzzedPulse {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.12); }
+  100% { filter: brightness(1); }
+}
+
+.team-header-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.team-school {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--red);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  word-break: break-word;
+  max-width: 260px;
+}
+
+.team-number-badge {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: var(--cream);
+  background: var(--red);
+  padding: 4px 14px;
+  border: 1px solid var(--red-deep);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Prominent Circular School Logo Slot with Fallback */
+.school-logo {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background-color: var(--cream);
+  border: 4px solid var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 4px 4px 0 var(--newsprint);
+  margin: auto 0;
+  position: relative;
+}
+.school-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+
+.team-score-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.team-score-section .score-label {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--red);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.team-score-section .score-val {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 6vw, 6rem);
+  font-weight: 900;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  transition: transform 0.2s ease;
+}
+
+/* ----------------------------------------------------
+   11. BRAND FOOTER STRIP
+   ---------------------------------------------------- */
+.tagisan-footer {
+  width: 100%;
+  background-color: var(--red);
+  color: var(--cream);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  margin-top: auto;
+}
+
+.tagisan-footer a {
+  color: var(--cream);
+  text-decoration: none;
+}
+
+/* ----------------------------------------------------
+   12. UTILITIES & HELPERS
+   ---------------------------------------------------- */
+.hidden {
+  display: none !important;
+}
+
+.info-text {
+  font-size: 0.95rem;
+  color: var(--red);
+  text-align: center;
+  line-height: 1.35;
+  font-weight: 700;
+}

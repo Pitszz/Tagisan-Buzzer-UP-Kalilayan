@@ -150,7 +150,16 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Quiz server running! Open http://localhost:${PORT}/index.html on host`);
+    console.log(`Quiz server running!`);
+    console.log(`  Host (this laptop):  http://localhost:${PORT}/index.html`);
+
+    // Show the LAN addresses that players and the projector should open
+    const nets = require('os').networkInterfaces();
+    Object.values(nets).flat().forEach((n) => {
+        if (n && n.family === 'IPv4' && !n.internal) {
+            console.log(`  Players / Spectator: http://${n.address}:${PORT}/index.html`);
+        }
+    });
 });
