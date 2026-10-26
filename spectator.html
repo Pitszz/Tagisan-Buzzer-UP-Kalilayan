@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagisan 41 Quiz Show - Spectator Display</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #111827;
+            --border-color: #e5e7eb;
+            --success-glow: rgba(22, 163, 74, 0.12);
+            --success-bg: #f0fdf4;
+            --success-border: #16a34a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        /* Evenly Split Teams Container with Line Separators */
+        .teams-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: stretch;
+            flex: 1;
+            background: #ffffff;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        /* Individual Team Column */
+        .team-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 32px 16px;
+            text-align: center;
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Subtle Line Separator between columns (except the last one) */
+        .team-column:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 15%;
+            height: 70%;
+            width: 1px;
+            background-color: var(--border-color);
+        }
+
+        /* Green Glow Effect when Buzzed First */
+        .team-column.buzzed {
+            background-color: var(--success-bg);
+        }
+        .team-column.buzzed .team-number-badge {
+            background-color: #dcfce7;
+            color: #166534;
+            border-color: var(--success-border);
+        }
+
+        /* Top Grouping: Name & Number close together */
+        .team-header-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .team-school {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-color);
+            line-height: 1.25;
+            max-width: 200px;
+        }
+
+        .team-number-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #4b5563;
+            background: #f3f4f6;
+            padding: 2px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Middle Section: Logo (Prominent) */
+        .school-logo {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background-color: #111827; /* Default solid black circle */
+            border: 3px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            margin: auto 0;
+        }
+
+        .school-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Bottom Section: Score */
+        .team-score-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .score-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .score-val {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--text-color);
+            line-height: 1;
+        }
+
+        .waiting-message {
+            text-align: center;
+            padding: 80px;
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 1.2rem;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header Title -->
+        <div class="header">
+            <h1 id="displayTitle">Tagisan 41 Quiz Show</h1>
+            <div class="subtitle">UP Kalilayan</div>
+        </div>
+
+        <!-- Teams Split Container -->
+        <div id="teamsContainer" class="teams-container">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let previousBuzzState = {}; // Track who was buzzed previously
+
+        function getSchoolLogoHTML(schoolName) {
+            if (!schoolName) return '';
+
+            let logoFilename = '';
+            const lower = schoolName.toLowerCase();
+
+            if (lower.includes('diliman') || lower.includes('up diliman')) {
+                logoFilename = 'up.png';
+            } else if (lower.includes('ateneo')) {
+                logoFilename = 'ateneo.png';
+            } else if (lower.includes('la salle') || lower.includes('dlsu')) {
+                logoFilename = 'dlsu.png';
+            }
+
+            if (logoFilename) {
+                return `<img src="assets/logos/${logoFilename}" alt="${schoolName}" onerror="this.style.display='none'">`;
+            }
+
+            return ''; // Defaults to empty inside the black circle container
+        }
+
+        // Initialize the browser's Audio Context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Programmatically synthesize quiz show sounds
+        function playSound(type) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'buzz') {
+                // Sharp Arcade Buzzer Beep
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(160, now + 0.25);
+                
+                gainNode.gain.setValueAtTime(0.25, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } 
+            else if (type === 'correct') {
+                // Pleasant Upward Chime (Major Arpeggio)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);       // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+                
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                
+                osc.start(now);
+                osc.stop(now + 0.45);
+            } 
+            else if (type === 'wrong') {
+                // Low Descending Error Thud/Buzz
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.setValueAtTime(110, now + 0.15);
+                
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+        }
+
+        socket.on('updateState', (gameState) => {
+            const currentBuzzState = {};
+
+            if (gameState.players) {
+                gameState.players.forEach((p) => {
+                    // Check if a player just buzzed in
+                    if (p.status === 'buzzed') {
+                        currentBuzzState[p.id] = true;
+                        if (!previousBuzzState[p.id]) {
+                            playSound('buzz'); 
+                        }
+                    }
+                });
+            }
+            previousBuzzState = currentBuzzState; // Update state tracker
+
+            const titleEl = document.getElementById('displayTitle');
+            if (gameState.title) {
+                titleEl.textContent = gameState.title;
+            }
+
+            const containerEl = document.getElementById('teamsContainer');
+            containerEl.innerHTML = '';
+
+            if (!gameState.players || gameState.players.length === 0) {
+                containerEl.innerHTML = `<div class="waiting-message">Waiting for teams to join the game...</div>`;
+                return;
+            }
+
+            gameState.players.forEach((p) => {
+                const column = document.createElement('div');
+                const isBuzzed = p.status === 'buzzed';
+                column.className = `team-column ${isBuzzed ? 'buzzed' : ''}`;
+
+                column.innerHTML = `
+                    <div class="team-header-group">
+                        <div class="team-school" title="${p.school}">${p.school}</div>
+                        <div class="team-number-badge">Team #${p.number}</div>
+                    </div>
+                    <div class="school-logo">
+                        ${getSchoolLogoHTML(p.school)}
+                    </div>
+                `;
+                containerEl.appendChild(column);
+            });
+        });
+    </script>
+</body>
+</html>

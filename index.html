@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagisan 41 Quiz Show - Main Menu</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #111827;
+            --card-bg: #f9fafb;
+            --border-color: #e5e7eb;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Logo Placeholder */
+        .logo-container {
+            width: 64px;
+            height: 64px;
+            background-color: var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        /* Inverted Triangle for Logo */
+        .temp-triangle {
+            width: 0;
+            height: 0;
+            border-left: 16px solid transparent;
+            border-right: 16px solid transparent;
+            border-top: 28px solid var(--text-color);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+            letter-spacing: -0.025em;
+        }
+
+        /* Card Layout */
+        .card {
+            width: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Buttons & Inputs */
+        button, select, input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        button {
+            background-color: var(--text-color);
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.primary {
+            background-color: var(--primary-color);
+        }
+        button.primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.secondary {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        button.secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        select, input {
+            background-color: #ffffff;
+            color: var(--text-color);
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: -8px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .info-text {
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Top Logo -->
+        <div class="logo-container" id="logoWrapper">
+            <div class="temp-triangle"></div>
+        </div>
+
+        <h1>Tagisan 41 Quiz Show</h1>
+
+        <!-- PERSISTENT PROFILE QUICK-JOIN CARD (Hidden by default) -->
+        <div id="savedProfileCard" class="card hidden">
+            <div class="info-text" style="font-weight: 600; color: var(--text-color);">
+                Welcome back!
+            </div>
+            <div id="savedProfileText" class="info-text"></div>
+            <button class="primary" onclick="joinWithSavedProfile()">Rejoin</button>
+            <button class="secondary" onclick="clearSavedProfile()">Use Different Profile</button>
+        </div>
+
+        <!-- VIEW 1: MAIN MENU -->
+        <div id="mainMenu" class="card">
+            <div class="menu-options">
+                <button class="primary" onclick="switchView('join')">JOIN</button>
+                <button onclick="switchView('host')">HOST</button>
+                <button class="secondary" onclick="switchView('spectate')">SPECTATE</button>
+            </div>
+        </div>
+
+        <!-- VIEW 2: JOIN CONFIGURATION -->
+        <div id="joinView" class="card hidden">
+            <label for="schoolSelect">Select School</label>
+            <select id="schoolSelect" onchange="handleSchoolChange()">
+                <option value="" disabled selected>-- Choose your school --</option>
+            </select>
+
+            <!-- Custom Input for 'Other' (Hidden by default) -->
+            <div id="customSchoolContainer" class="hidden" style="margin-top: 4px;">
+                <label for="customSchoolInput" style="display: block; margin-bottom: 6px;">School Name</label>
+                <input type="text" id="customSchoolInput" placeholder="e.g. UP Diliman, UP Manila...">
+            </div>
+
+            <label for="playerNumber" style="margin-top: 4px;">Assigned Number</label>
+            <input type="number" id="playerNumber" placeholder="e.g. 1, 2, 3..." min="1">
+
+            <button class="primary" onclick="handleJoinGame()">Connect to Game</button>
+            <button class="secondary" onclick="switchView('mainMenu')">Back</button>
+        </div>
+
+        <!-- VIEW 3: WAITING FOR HOST STATE -->
+        <div id="waitingView" class="card hidden">
+            <div class="info-text">
+                <p id="waitingStatusText">Checking for active hosted game...</p>
+            </div>
+            <button class="secondary" onclick="switchView('mainMenu')">Cancel</button>
+        </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Listen for the school list sent dynamically from server.js (reading schools.txt)
+        socket.on('schoolList', (schools) => {
+            const selectEl = document.getElementById('schoolSelect');
+            selectEl.innerHTML = '<option value="" disabled selected>-- Choose your school --</option>';
+
+            schools.forEach(school => {
+                const opt = document.createElement('option');
+                opt.value = school;
+                opt.textContent = school;
+                selectEl.appendChild(opt);
+            });
+
+            // Add "Other" option at the bottom
+            const otherOpt = document.createElement('option');
+            otherOpt.value = "OTHER";
+            otherOpt.textContent = "Other...";
+            selectEl.appendChild(otherOpt);
+        });
+
+        // Show/hide manual input field depending on selection
+        function handleSchoolChange() {
+            const selectEl = document.getElementById('schoolSelect');
+            const customContainer = document.getElementById('customSchoolContainer');
+            
+            if (selectEl.value === "OTHER") {
+                customContainer.classList.remove('hidden');
+            } else {
+                customContainer.classList.add('hidden');
+                document.getElementById('customSchoolInput').value = '';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check if there is a saved player profile in localStorage
+            const savedSchool = localStorage.getItem('quizPlayerSchool');
+            const savedNumber = localStorage.getItem('quizPlayerNumber');
+
+            if (savedSchool && savedNumber) {
+                document.getElementById('mainMenu').classList.add('hidden');
+                document.getElementById('savedProfileCard').classList.remove('hidden');
+                document.getElementById('savedProfileText').innerHTML = `<b>${savedSchool}</b> <br>Team #${savedNumber}`;
+            }
+        });
+
+        function switchView(viewName) {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('joinView').classList.add('hidden');
+            document.getElementById('waitingView').classList.add('hidden');
+
+            if (viewName === 'mainMenu') {
+                document.getElementById('mainMenu').classList.remove('hidden');
+            } else if (viewName === 'join') {
+                document.getElementById('joinView').classList.remove('hidden');
+            } else if (viewName === 'host') {
+                window.location.href = 'host.html';
+            } else if (viewName === 'spectate') {
+                window.location.href = 'spectator.html';
+            }
+        }
+
+        function joinWithSavedProfile() {
+            const school = localStorage.getItem('quizPlayerSchool');
+            const number = localStorage.getItem('quizPlayerNumber');
+
+            document.getElementById('savedProfileCard').classList.add('hidden');
+            document.getElementById('waitingView').classList.remove('hidden');
+            document.getElementById('waitingStatusText').textContent = `Rejoining as ${school} #${number}...`;
+
+            setTimeout(() => {
+                window.location.href = 'player.html';
+            }, 500);
+        }
+
+        function clearSavedProfile() {
+            localStorage.removeItem('quizPlayerSchool');
+            localStorage.removeItem('quizPlayerNumber');
+            document.getElementById('savedProfileCard').classList.add('hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+        }
+
+        function handleJoinGame() {
+            const selectValue = document.getElementById('schoolSelect').value;
+            let school = selectValue;
+
+            // If "Other" is selected, grab the text from the manual input box
+            if (selectValue === "OTHER") {
+                school = document.getElementById('customSchoolInput').value.trim();
+            }
+
+            const number = document.getElementById('playerNumber').value;
+
+            if (!school || !number) {
+                alert('Please select or enter your school and provide your assigned number.');
+                return;
+            }
+
+            // Save info locally for persistence
+            localStorage.setItem('quizPlayerSchool', school);
+            localStorage.setItem('quizPlayerNumber', number);
+
+            document.getElementById('joinView').classList.add('hidden');
+            document.getElementById('waitingView').classList.remove('hidden');
+            document.getElementById('waitingStatusText').textContent = `Joining as ${school} #${number}...`;
+
+            setTimeout(() => {
+                window.location.href = 'player.html';
+            }, 500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagisan 41 Quiz Show - Player Buzzer</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #111827;
+            --card-bg: #f9fafb;
+            --border-color: #e5e7eb;
+            --primary-color: #2563eb;
+            --danger-color: #dc2626;
+            --success-color: #16a34a;
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .player-tag {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .player-tag span {
+            color: var(--text-color);
+        }
+
+        .back-link {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Main Buzzer Container */
+        .buzzer-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 480px;
+            gap: 24px;
+            padding: 20px 0;
+        }
+
+        .status-banner {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            width: 100%;
+        }
+
+        /* Giant Buzzer Button */
+        .buzzer-btn {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            border: 8px solid #e5e7eb;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+            transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .buzzer-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        /* Buzzer States */
+        .buzzer-btn.buzzed {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+            border-color: #fca5a5;
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.7);
+            animation: pulse 1.5s infinite;
+        }
+
+        .buzzer-btn.locked {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+            border-color: #d1d5db;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        .footer-info {
+            font-size: 0.85rem;
+            color: #6b7280;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="player-tag">
+            <span id="displaySchool">Loading School...</span> &bull; <span>#<span id="displayNumber">0</span></span>
+        </div>
+        <a href="#" onclick="confirmLeave(event)" class="back-link">Leave</a>
+    </div>
+
+    <div class="buzzer-container">
+        <div id="statusBanner" class="status-banner" style="color: #6b7280;">LOCKED OUT</div>
+        
+        <!-- The Giant Buzzer -->
+        <button id="buzzerBtn" class="buzzer-btn locked" disabled onclick="pressBuzzer()">BUZZ</button>
+    </div>
+
+    <div class="footer-info">
+        Tagisan 41 Quiz Show &bull; UP Kalilayan
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const school = localStorage.getItem('quizPlayerSchool') || 'Unknown School';
+        const number = localStorage.getItem('quizPlayerNumber') || '1';
+
+        document.getElementById('displaySchool').textContent = school;
+        document.getElementById('displayNumber').textContent = number;
+
+        let buzzerState = 'locked';
+
+        // Re-register player on load in case they refreshed
+        socket.emit('playerJoin', { school: school, number: number });
+
+        // Listen for state updates from the server
+        socket.on('updateState', (gameState) => {
+            const me = gameState.players.find(p => p.school === school && p.number == number);
+            if (me) {
+                buzzerState = me.status; // 'ready', 'buzzed', or 'locked'
+                updateBuzzerUI();
+            }
+        });
+
+        function pressBuzzer() {
+            if (buzzerState !== 'ready') return;
+
+            playSound('buzz'); // Play local sound immediately
+            triggerVibration(200);
+
+            socket.emit('playerBuzz');
+        }
+
+        // Initialize the browser's Audio Context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Programmatically synthesize quiz show sounds
+        function playSound(type) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'buzz') {
+                // Sharp Arcade Buzzer Beep
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(160, now + 0.25);
+                
+                gainNode.gain.setValueAtTime(0.25, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } 
+            else if (type === 'correct') {
+                // Pleasant Upward Chime (Major Arpeggio)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);       // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+                
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                
+                osc.start(now);
+                osc.stop(now + 0.45);
+            } 
+            else if (type === 'wrong') {
+                // Low Descending Error Thud/Buzz
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.setValueAtTime(110, now + 0.15);
+                
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+        }
+
+        // Helper for haptic vibration
+        function triggerVibration(pattern = 200) {
+            if ("vibrate" in navigator) {
+                try {
+                    navigator.vibrate(pattern);
+                } catch (err) {
+                    console.log("Vibration not supported or blocked:", err);
+                }
+            }
+        }
+
+        function handleBuzz() {
+            triggerVibration(200); // 200ms pulse
+            socket.emit('playerBuzz');
+        }
+
+        function updateBuzzerUI() {
+            const btn = document.getElementById('buzzerBtn');
+            const banner = document.getElementById('statusBanner');
+
+            btn.className = 'buzzer-btn';
+
+            if (buzzerState === 'ready') {
+                btn.disabled = false;
+                banner.textContent = "READY";
+                banner.style.color = "var(--text-color)";
+            } else if (buzzerState === 'buzzed') {
+                btn.classList.add('buzzed');
+                btn.disabled = true;
+                banner.textContent = "YOU BUZZED FIRST!";
+                banner.style.color = "var(--danger-color)";
+            } else if (buzzerState === 'locked') {
+                btn.classList.add('locked');
+                btn.disabled = true;
+                banner.textContent = "LOCKED OUT";
+                banner.style.color = "#4b5563";
+            }
+        }
+
+        let previousBuzzerState = 'locked';
+
+        socket.on('updateState', (gameState) => {
+            const me = gameState.players.find(p => p.school === school && p.number == number);
+            if (me) {
+                // Check if state changed from buzzed to locked due to correct/wrong evaluation
+                if (previousBuzzerState === 'buzzed' && me.status === 'locked') {
+                    // If their score increased, it was correct, otherwise wrong (or you can trigger based on host action)
+                }
+
+                buzzerState = me.status;
+                previousBuzzerState = buzzerState;
+                updateBuzzerUI();
+            }
+        });
+
+        function confirmLeave(event) {
+            event.preventDefault();
+            if (confirm("Are you sure you want to leave?")) {
+                // Disconnect socket explicitly before leaving
+                socket.disconnect();
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
