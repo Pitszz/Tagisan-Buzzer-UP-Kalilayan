@@ -835,7 +835,7 @@ button.control-btn.reset {
 
 .team-school {
   font-family: var(--font-display);
-  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+  font-size: clamp(1.3rem, 1.8vw, 1.8rem);
   font-weight: 900;
   text-transform: uppercase;
   color: var(--red);
@@ -859,8 +859,8 @@ button.control-btn.reset {
 
 /* Prominent Circular School Logo Slot with Fallback */
 .school-logo {
-  width: 140px;
-  height: 140px;
+  width: 240px;
+  height: 240px;
   border-radius: 50%;
   background-color: var(--cream);
   border: 4px solid var(--red);
