@@ -169,20 +169,20 @@
 
             <label for="playerNumber" style="margin-top: 4px;">Assigned Number</label>
             <div class="number-stepper">
-            <input type="number" id="teamNumberInput" min="1" max="99" value="1" required>
-            <div class="stepper-arrows">
-                <button type="button" class="stepper-btn" onclick="stepTeamNumber(1)" aria-label="Increase Team Number">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square">
-                        <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg>
-                </button>
-                <button type="button" class="stepper-btn" onclick="stepTeamNumber(-1)" aria-label="Decrease Team Number">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
+                <input type="number" id="teamNumberInput" min="1" max="99" value="1" required>
+                <div class="stepper-arrows">
+                    <button type="button" class="stepper-btn" onclick="stepTeamNumber(1)" aria-label="Increase Team Number">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                    </button>
+                    <button type="button" class="stepper-btn" onclick="stepTeamNumber(-1)" aria-label="Decrease Team Number">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </div>
-        </div>
 
             <button class="primary menu-btn-join" onclick="handleJoinGame()">Connect</button>
             <button class="secondary" onclick="switchView('mainMenu')">Back to Menu</button>
@@ -396,7 +396,7 @@
 
             if (savedSchool && savedNumber) {
                 document.getElementById('savedProfileCard').classList.remove('hidden');
-                document.getElementById('savedProfileText').innerHTML = `<b>${savedSchool}</b> <br>Team #${savedNumber}`;
+                document.getElementById('savedProfileText').innerHTML = `<b>${savedSchool.toUpperCase()}</b> <br> Team #${savedNumber}`;
             } else {
                 document.getElementById('savedProfileCard').classList.add('hidden');
                 document.getElementById('mainMenu').classList.remove('hidden');
