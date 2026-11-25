@@ -66,8 +66,10 @@
         <!-- Connected Players Panel -->
         <div class="card card-taped">
             <div class="card-header-bar">
-                <h2>Quiz Show Finalists</h2>
-                <span class="tape-strip" style="font-size: 0.75rem;">LIVE COMPETITION</span>
+                <h2 class="tape-strip" style="font-size: 1.2rem; margin-bottom: px;">Quiz Show Finalists</h2>
+                <button type="button" id="toggleScoresBtn" class="score-toggle-btn" onclick="toggleSpectatorScores()">
+                    Show Scores
+                </button>
             </div>
             <div id="playerList" class="player-list">
                 <!-- Dynamically populated -->
@@ -166,6 +168,13 @@
         });
 
         function renderHostPanel() {
+            const toggleBtn = document.getElementById('toggleScoresBtn');
+            if (toggleBtn) {
+                const showing = Boolean(gameState.showScores);
+                toggleBtn.classList.toggle('active', showing);
+                toggleBtn.textContent = showing ? 'Hide Scores' : 'Show Scores';
+            }
+
             const listEl = document.getElementById('playerList');
             const raiserPopup = document.getElementById('activeRaiserPopup');
             const raiserNameDisplay = document.getElementById('raiserNameDisplay');
@@ -265,6 +274,10 @@
             if (confirm("Are you sure you want to reset all scores to 0 and remove disconnected players?")) {
                 socket.emit('hostAction', { type: 'resetScores' });
             }
+        }
+
+        function toggleSpectatorScores() {
+            socket.emit('hostAction', { type: 'toggleScores' });
         }
     </script>
 </body>

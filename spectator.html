@@ -28,7 +28,7 @@
                 </div>
                 <div class="spectator-brand-text">
                     <h1 id="displayTitle">Tagisan 41 Quiz Show</h1>
-                    <div class="spectator-sub">Paghasa ng Bayan &bull; 41st Edition</div>
+                    <div class="spectator-sub">Paghasa ng Bayan &bull; UP Kalilayan</div>
                 </div>
             </div>
             <button type="button" id="fullscreenBtn" class="fullscreen-btn spectator-fullscreen-btn hidden" aria-label="Enter fullscreen" title="Fullscreen">
@@ -92,6 +92,27 @@
             return `<img src="${logoSrc}" alt="${altText}" onerror="this.onerror=null;this.src='${DEFAULT_SCHOOL_LOGO}';">`;
         }
 
+        // Standard competition ranking (1, 2, 2, 4); teams at 0 get no rank or highlight
+        function getTeamRanks(players) {
+            const positiveScores = (players || [])
+                .map(p => Number(p.score) || 0)
+                .filter(score => score > 0)
+                .sort((a, b) => b - a);
+
+            return (players || []).map((p) => {
+                const score = Number(p.score) || 0;
+                if (score <= 0) return null;
+                return positiveScores.indexOf(score) + 1;
+            });
+        }
+
+        function formatRankLabel(rank) {
+            if (rank === 1) return '1ST';
+            if (rank === 2) return '2ND';
+            if (rank === 3) return '3RD';
+            return `${rank}TH`;
+        }
+
         // ====================================================
         // 3. STAGE RENDERING & BUZZ AUDIO CUE
         // ====================================================
@@ -109,12 +130,27 @@
                 return;
             }
 
-            gameState.players.forEach((p) => {
+            const showScores = Boolean(gameState.showScores);
+            const ranks = showScores ? getTeamRanks(gameState.players) : [];
+
+            gameState.players.forEach((p, idx) => {
                 const column = document.createElement('div');
                 const isBuzzed = p.status === 'buzzed';
-                column.className = `team-column ${isBuzzed ? 'buzzed' : ''}`;
+                const rank = showScores ? ranks[idx] : null;
+                const podiumClass = (rank && rank <= 3) ? `rank-${rank}` : '';
 
-                // Scores stay hidden on the projector stage; re-add .team-score-section if needed
+                column.className = `team-column${showScores ? ' with-scores' : ''}${podiumClass ? ` ${podiumClass}` : ''}${isBuzzed ? ' buzzed' : ''}`;
+
+                const scoreSectionHTML = showScores ? `
+                    <div class="team-score-section">
+                        <div class="score-label">Score</div>
+                        <div class="score-val">${p.score || 0}</div>
+                        <div class="rank-slot">
+                            ${rank ? `<span class="rank-badge ${rank <= 3 ? `rank-${rank}` : 'rank-other'}">${formatRankLabel(rank)}</span>` : ''}
+                        </div>
+                    </div>
+                ` : '';
+
                 column.innerHTML = `
                     <div class="team-header-group">
                         <div class="team-number-badge">Team #${p.number}</div>
@@ -123,6 +159,7 @@
                     <div class="school-logo">
                         ${getSchoolLogoHTML(p.school)}
                     </div>
+                    ${scoreSectionHTML}
                 `;
                 containerEl.appendChild(column);
             });

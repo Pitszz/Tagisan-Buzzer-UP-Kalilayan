@@ -28,7 +28,8 @@ function createInitialGameState() {
         title: DEFAULT_TITLE,
         players: [],
         wrongAttempts: 0,
-        failedTeamKeys: []
+        failedTeamKeys: [],
+        showScores: false
     };
 }
 
@@ -53,7 +54,8 @@ function loadGameState() {
                     title: parsed.title || DEFAULT_TITLE,
                     players,
                     wrongAttempts: Number(parsed.wrongAttempts) || 0,
-                    failedTeamKeys: Array.isArray(parsed.failedTeamKeys) ? parsed.failedTeamKeys : []
+                    failedTeamKeys: Array.isArray(parsed.failedTeamKeys) ? parsed.failedTeamKeys : [],
+                    showScores: Boolean(parsed.showScores)
                 };
             }
         }
@@ -303,6 +305,10 @@ io.on('connection', (socket) => {
                         score: 0,
                         status: 'locked'
                     }));
+                break;
+
+            case 'toggleScores':
+                gameState.showScores = !gameState.showScores;
                 break;
 
             default:

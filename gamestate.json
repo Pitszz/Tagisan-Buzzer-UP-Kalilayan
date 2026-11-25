@@ -1,31 +1,40 @@
 {
-  "title": "Tagisan 41 Quiz Show",
+  "title": "tagisan 41 quiz show",
   "players": [
     {
-      "id": "-HB2Av_cUzGaI7lLAABC",
-      "school": "Guinayangan National High School",
-      "number": "13",
-      "score": 0,
-      "status": "locked",
-      "connected": true
-    },
-    {
-      "id": "8ZlVfJdmeLDgO7S7AAAx",
+      "id": "jDXEItQr_TfJeBfBAAAB",
       "school": "Quezon Science High School",
       "number": "13",
-      "score": 1,
-      "status": "locked",
+      "score": 15,
+      "status": "ready",
       "connected": true
     },
     {
-      "id": "IICEJs_97B5lzszTAABD",
+      "id": "1hdap1cTKS5vmgmwAAAC",
+      "school": "Paaralang Sekundarya ng Lucban Integrated School",
+      "number": "1",
+      "score": 9,
+      "status": "ready",
+      "connected": true
+    },
+    {
+      "id": "tg3ctl48jNtXt8W4AAAH",
+      "school": "Dolores Macasaet National High School",
+      "number": "22",
+      "score": 10,
+      "status": "ready",
+      "connected": true
+    },
+    {
+      "id": "40-zi_lROHpIqDOQAAAZ",
       "school": "Quezon National High School",
       "number": "15",
-      "score": 4,
-      "status": "locked",
-      "connected": true
+      "score": 0,
+      "status": "ready",
+      "connected": false
     }
   ],
   "wrongAttempts": 0,
-  "failedTeamKeys": []
+  "failedTeamKeys": [],
+  "showScores": false
 }

@@ -801,6 +801,22 @@ button.control-btn.reset {
   flex: 1; /* This stretches the button to fill the remaining horizontal space */
 }
 
+/* Host Header Toggle Button for Spectator Scores */
+button.score-toggle-btn {
+  width: auto;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  background-color: var(--cream);
+  color: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: 2px 2px 0 var(--newsprint);
+}
+button.score-toggle-btn.active {
+  background-color: var(--red);
+  color: var(--cream);
+  box-shadow: 2px 2px 0 var(--red-deep);
+}
+
 /* ----------------------------------------------------
    10. SPECTATOR DISPLAY (PROJECTOR 16:9 VIEW)
    ---------------------------------------------------- */
@@ -890,11 +906,11 @@ button.control-btn.reset {
 
 .round-status-tag {
     position: absolute;
-    top: -18px;
+    top: -36px;
     right: 24px;
     z-index: 20;
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 900;
     color: var(--red);
     background: var(--tape);
@@ -921,26 +937,70 @@ button.control-btn.reset {
 
 /* Individual Team Column */
 .team-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  /* Reserve a fixed top percentage for the team badge + school name so every logo aligns horizontally */
+  grid-template-rows: 12% 1fr;
+  justify-items: center;
   align-items: center;
-  justify-content: space-between;
-  padding: 32px 18px;
+  padding: 28px 18px;
   text-align: center;
   position: relative;
   border-right: 3px solid var(--red);
   background-color: var(--cream);
   transition: background-color 0.15s ease, color 0.15s ease;
 }
+.team-column.with-scores {
+  grid-template-rows: 12% 1fr auto;
+}
 .team-column:last-child {
   border-right: none;
+}
+
+/* Podium ranking highlights (only applied when Show Scores is toggled on and score > 0) */
+.team-column.rank-1 {
+  background-color: var(--red);
+  color: var(--cream);
+}
+.team-column.rank-1 .team-school {
+  color: var(--cream);
+  font-size: clamp(1.5rem, 1.8vw, 5.2rem);
+}
+.team-column.rank-1 .team-number-badge {
+  background-color: var(--cream);
+  color: var(--red);
+  border-color: var(--cream);
+}
+.team-column.rank-1 .school-logo {
+  width: 268px;
+  height: 268px;
+  border-color: var(--cream);
+  box-shadow: 0 0 0 4px var(--red), 0 0 0 8px var(--cream);
+}
+.team-column.rank-1 .school-logo img {
+  padding: 8px;
+}
+.team-column.rank-1 .score-label {
+  color: var(--cream);
+  opacity: 0.92;
+}
+.team-column.rank-1 .score-val {
+  color: var(--cream);
+  font-size: clamp(3.2rem, 5.4vw, 5.2rem);
+}
+.team-column.rank-2 {
+  box-shadow: inset 0 5px 0 var(--halftone), inset 0 -5px 0 var(--halftone);
+}
+.team-column.rank-3 {
+  box-shadow: inset 0 -4px 0 var(--newsprint);
 }
 
 /* Buzzed First Highlight: Complete Invert to Solid Ink-Red */
 .team-column.buzzed {
   background-color: var(--red) !important;
   color: var(--cream) !important;
+  box-shadow: inset 0 0 0 6px var(--cream) !important;
   animation: teamBuzzedPulse 1.4s infinite ease-in-out;
 }
 .team-column.buzzed .team-school {
@@ -963,6 +1023,11 @@ button.control-btn.reset {
   color: var(--cream) !important;
   transform: scale(1.08);
 }
+.team-column.buzzed .rank-badge {
+  background-color: var(--cream) !important;
+  color: var(--red) !important;
+  border-color: var(--cream) !important;
+}
 
 @keyframes teamBuzzedPulse {
   0% { filter: brightness(1); }
@@ -974,20 +1039,24 @@ button.control-btn.reset {
   display: flex;
   flex-direction: column;
   align-items: center;
+  align-self: start;
   gap: 8px;
   width: 100%;
 }
 
 .team-school {
   font-family: var(--font-display);
-  font-size: clamp(1.3rem, 1.8vw, 1.8rem);
+  font-size: clamp(1.05rem, 1.45vw, 1.55rem);
   font-weight: 900;
   text-transform: uppercase;
   color: var(--red);
-  line-height: 1.05;
+  line-height: 1.08;
   letter-spacing: -0.03em;
-  word-break: break-word;
-  max-width: 260px;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+  text-wrap: balance;
+  width: 100%;
 }
 
 .team-number-badge {
@@ -1015,7 +1084,8 @@ button.control-btn.reset {
   justify-content: center;
   overflow: hidden;
   box-shadow: 4px 4px 0 var(--newsprint);
-  margin: auto 0;
+  margin: 0;
+  align-self: center;
   position: relative;
 }
 .school-logo img {
@@ -1030,6 +1100,55 @@ button.control-btn.reset {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  margin-top: 10px;
+}
+
+.rank-slot {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.rank-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rank-badge.rank-1 {
+  background-color: var(--cream);
+  color: var(--red);
+  border: 3px solid var(--cream);
+  padding: 6px 22px;
+  font-size: 1.15rem;
+  box-shadow: 3px 3px 0 var(--red-deep);
+  transform: rotate(-1.5deg);
+}
+
+.rank-badge.rank-2 {
+  background-color: var(--tape);
+  color: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: 2px 2px 0 var(--newsprint);
+  transform: rotate(1deg);
+}
+
+.rank-badge.rank-3 {
+  background-color: var(--newsprint);
+  color: var(--red);
+  border: 2px solid var(--red);
+}
+
+.rank-badge.rank-other {
+  background-color: transparent;
+  color: var(--halftone);
+  border: 1px solid var(--halftone);
 }
 
 .team-score-section .score-label {
@@ -1043,7 +1162,7 @@ button.control-btn.reset {
 
 .team-score-section .score-val {
   font-family: var(--font-display);
-  font-size: clamp(3.5rem, 6vw, 6rem);
+  font-size: clamp(2.5rem, 4.4vw, 4.2rem);
   font-weight: 900;
   color: var(--red);
   font-variant-numeric: tabular-nums;
