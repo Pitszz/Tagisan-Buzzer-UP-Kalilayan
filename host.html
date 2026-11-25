@@ -26,9 +26,10 @@
         }
 
         .header-top {
+            position: relative;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
             border-bottom: 3px solid var(--red);
             padding-bottom: 16px;
             flex-wrap: wrap;
@@ -60,11 +61,10 @@
 
     <div class="container">
         <div>
-            <a href="#" onclick="confirmLeaveHost(event)" class="back-link">
-                &larr; Back to Menu
-            </a>
+            <!-- <a href="#" onclick="confirmBackToMainMenu(event)" class="back-link">
+                Back to Menu
+            </a> -->
             <div class="header-top">
-                <h1>Host Dashboard</h1>
                 <input type="text" id="gameTitleInput" class="game-title-input" value="Tagisan 41 Quiz Show" onchange="updateGameTitle()">
             </div>
         </div>
@@ -127,9 +127,44 @@
         </button>
     </div>
 
+    <script src="back-navigation.js"></script>
     <script>
         const socket = io();
+        const hostPassword = sessionStorage.getItem('quizHostPassword');
+
+        // Kick out anyone who types /host.html directly without logging in
+        if (!hostPassword) {
+            window.location.replace('index.html');
+        } else {
+            socket.emit('verifyHost', hostPassword, (res) => {
+                if (!res || !res.ok) {
+                    sessionStorage.removeItem('quizHostPassword');
+                    window.location.replace('index.html');
+                }
+            });
+        }
+
+        // Re-authenticate automatically if the socket briefly disconnects and reconnects
+        socket.on('connect', () => {
+            if (hostPassword) {
+                socket.emit('verifyHost', hostPassword);
+            }
+        });
+
         let gameState = { title: "Tagisan 41 Quiz Show", players: [] };
+
+        setupBackToMenuFallback({
+            getSocket: () => socket,
+            onBeforeLeave: () => {
+                sessionStorage.removeItem('quizHostPassword');
+                localStorage.removeItem('quizPlayerSchool');
+                localStorage.removeItem('quizPlayerNumber');
+            }
+        });
+
+        function sendHostAction(payload) {
+            socket.emit('hostAction', { ...payload, password: hostPassword });
+        }
 
         socket.on('updateState', (serverState) => {
             gameState = serverState;
@@ -141,19 +176,6 @@
 
             renderHostPanel();
         });
-
-        function confirmLeaveHost(event) {
-            event.preventDefault();
-            if (confirm("Are you sure you want to go back to main menu?")) {
-                // Clear any leftover player session tokens so it doesn't trigger player reconnection
-                localStorage.removeItem('quizPlayerSchool');
-                localStorage.removeItem('quizPlayerNumber');
-
-                // Disconnect socket and redirect
-                if (typeof socket !== 'undefined') socket.disconnect();
-                window.location.href = 'index.html';
-            }
-        }
 
         function renderHostPanel() {
             const listEl = document.getElementById('playerList');
@@ -175,7 +197,7 @@
             if (!gameState.players || gameState.players.length === 0) {
                 listEl.innerHTML = `
                     <div class="player-row" style="justify-content: center; color: var(--halftone); font-style: italic; border: 2px dashed var(--newsprint); background: transparent; box-shadow: none;">
-                        Waiting for teams to join... No active connections yet.
+                        WAITING FOR TEAMS TO JOIN...
                     </div>`;
                 return;
             }
@@ -280,35 +302,35 @@
         function handleCorrectBuzzer() {
             playSound('correct');
             triggerVibration([100, 50, 100]);
-            socket.emit('hostAction', { type: 'correct' });
+            sendHostAction({ type: 'correct' });
         }
 
         function handleWrongBuzzer() {
             playSound('wrong');
             triggerVibration(400);
-            socket.emit('hostAction', { type: 'wrong' });
+            sendHostAction({ type: 'wrong' });
         }
 
         function updateGameTitle() {
             const val = document.getElementById('gameTitleInput').value;
-            socket.emit('hostAction', { type: 'updateTitle', title: val });
+            sendHostAction({ type: 'updateTitle', title: val });
         }
 
         function adjustScore(index, delta) {
-            socket.emit('hostAction', { type: 'adjustScore', index: index, delta: delta });
+            sendHostAction({ type: 'adjustScore', index: index, delta: delta });
         }
 
         function lockAllPlayers() {
-            socket.emit('hostAction', { type: 'lockAll' });
+            sendHostAction({ type: 'lockAll' });
         }
 
         function unlockAllPlayers() {
-            socket.emit('hostAction', { type: 'unlockAll' });
+            sendHostAction({ type: 'unlockAll' });
         }
 
         function confirmResetScores() {
             if (confirm("Are you sure you want to reset all player scores to 0?")) {
-                socket.emit('hostAction', { type: 'resetScores' });
+                sendHostAction({ type: 'resetScores' });
             }
         }
     </script>

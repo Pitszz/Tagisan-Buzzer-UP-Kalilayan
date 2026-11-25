@@ -98,6 +98,15 @@
             font-size: 1.25rem;
             padding: 18px 20px;
         }
+
+        #schoolSelectLabel {
+            display: block;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -121,13 +130,10 @@
 
         <!-- PERSISTENT PROFILE QUICK-JOIN CARD (Hidden by default) -->
         <div id="savedProfileCard" class="card card-taped hidden">
-            <div class="tape-strip" style="align-self: flex-start; margin-bottom: -6px;">PROFILE FOUND</div>
-            <div class="info-text" style="font-size: 1.15rem; font-weight: 900; text-transform: uppercase;">
-                Welcome back!
-            </div>
+            <div class="tape-strip" style="align-self: flex-start; margin-bottom: -6px;">WELCOME BACK!</div>
             <div id="savedProfileText" class="info-text"></div>
             <button class="primary menu-btn-join" onclick="joinWithSavedProfile()">Rejoin</button>
-            <button class="secondary" onclick="clearSavedProfile()">Use Different Profile</button>
+            <button class="secondary" onclick="clearSavedProfile()">Back to Menu</button>
         </div>
 
         <!-- VIEW 1: MAIN MENU (CHUNKY TORN-PAPER SLABS) -->
@@ -141,22 +147,45 @@
 
         <!-- VIEW 2: JOIN CONFIGURATION -->
         <div id="joinView" class="card card-taped hidden">
-            <label for="schoolSelect">Select School</label>
-            <select id="schoolSelect" onchange="handleSchoolChange()">
-                <option value="" disabled selected>-- Choose your school --</option>
-            </select>
+            <label for="schoolSelect">School</label>
+            <div class="custom-select-wrapper" id="schoolDropdown">
+                <input type="hidden" id="schoolSelect" value="">
+                <button type="button" class="custom-select-trigger" id="schoolSelectTrigger">
+                    <span id="schoolSelectLabel">- CHOOSE YOUR SCHOOL -</span>
+                    <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="custom-select-menu hidden" id="schoolSelectMenu">
+                    <!-- Populated dynamically from schoolList -->
+                </div>
+            </div>
 
             <!-- Custom Input for 'Other' (Hidden by default) -->
             <div id="customSchoolContainer" class="hidden" style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
-                <label for="customSchoolInput" style="display: block;">School Name</label>
-                <input type="text" id="customSchoolInput" placeholder="e.g. Quezon National High School...">
+                <label for="customSchoolInput" style="display: block; margin-bottom: 1px;">Enter School Name</label>
+                <input type="text" id="customSchoolInput" placeholder="UP Diliman...">
             </div>
 
             <label for="playerNumber" style="margin-top: 4px;">Assigned Number</label>
-            <input type="number" id="playerNumber" placeholder="e.g. 1, 2, 3..." min="1">
+            <div class="number-stepper">
+            <input type="number" id="teamNumberInput" min="1" max="99" value="1" required>
+            <div class="stepper-arrows">
+                <button type="button" class="stepper-btn" onclick="stepTeamNumber(1)" aria-label="Increase Team Number">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                </button>
+                <button type="button" class="stepper-btn" onclick="stepTeamNumber(-1)" aria-label="Decrease Team Number">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
 
-            <button class="primary menu-btn-join" onclick="handleJoinGame()">Connect to Game</button>
-            <button class="secondary" onclick="switchView('mainMenu')">Back</button>
+            <button class="primary menu-btn-join" onclick="handleJoinGame()">Connect</button>
+            <button class="secondary" onclick="switchView('mainMenu')">Back to Menu</button>
         </div>
 
         <!-- VIEW 3: WAITING FOR HOST STATE -->
@@ -167,36 +196,81 @@
             <button class="secondary" onclick="switchView('mainMenu')">Cancel</button>
         </div>
 
+        <!-- VIEW 4: HOST PASSWORD PROMPT -->
+        <div id="hostLoginView" class="card card-taped hidden">
+            <!-- <div class="tape-strip" style="align-self: flex-start; margin-bottom: -6px;">HOST ACCESS</div> -->
+            <label for="hostPasswordInput" style="margin-bottom: 1px;">Enter Password</label>
+            <input type="password" id="hostPasswordInput" placeholder="••••••••" onkeydown="if (event.key === 'Enter') verifyHostLogin()">
+            <div id="hostLoginError" class="hidden" style="color: var(--red); font-size: 0.85rem; text-transform: uppercase;">
+                Incorrect password. Try again.
+            </div>
+            <button class="primary menu-btn-join" onclick="verifyHostLogin()">Connect</button>
+            <button class="secondary" onclick="switchView('mainMenu')">Back to Menu</button>
+        </div>
+
     </div>
 
     <!-- Red Ink-Splash Footer Strip -->
     <footer class="tagisan-footer">
-        <span>Tagisan 41 &bull; UP Kalilayan</span>
         <a href="https://instagram.com/upkalilayan" target="_blank" rel="noopener noreferrer">@UPKALILAYAN</a>
     </footer>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+        const dropdownWrapper = document.getElementById('schoolDropdown');
+        const dropdownTrigger = document.getElementById('schoolSelectTrigger');
+        const dropdownMenu = document.getElementById('schoolSelectMenu');
+        const dropdownLabel = document.getElementById('schoolSelectLabel');
+        const hiddenSchoolInput = document.getElementById('schoolSelect');
 
-        // Listen for the school list sent dynamically from server.js (reading schools.txt)
-        socket.on('schoolList', (schools) => {
-            const selectEl = document.getElementById('schoolSelect');
-            selectEl.innerHTML = '<option value="" disabled selected>-- Choose your school --</option>';
-
-            schools.forEach(school => {
-                const opt = document.createElement('option');
-                opt.value = school;
-                opt.textContent = school;
-                selectEl.appendChild(opt);
-            });
-
-            // Add "Other" option at the bottom
-            const otherOpt = document.createElement('option');
-            otherOpt.value = "OTHER";
-            otherOpt.textContent = "Other...";
-            selectEl.appendChild(otherOpt);
+        dropdownTrigger.addEventListener('click', () => {
+            dropdownWrapper.classList.toggle('open');
+            dropdownMenu.classList.toggle('hidden');
         });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdownWrapper.contains(e.target)) {
+                dropdownWrapper.classList.remove('open');
+                dropdownMenu.classList.add('hidden');
+            }
+        });
+
+        socket.on('schoolList', (schools) => {
+            dropdownMenu.innerHTML = '';
+            const allOptions = [...schools, 'OTHER'];
+
+            allOptions.forEach((school) => {
+                const item = document.createElement('div');
+                item.className = 'custom-select-option';
+                item.textContent = school;
+
+                item.addEventListener('click', () => {
+                    hiddenSchoolInput.value = school;
+                    dropdownLabel.textContent = school;
+
+                    dropdownMenu.querySelectorAll('.custom-select-option').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+
+                    dropdownWrapper.classList.remove('open');
+                    dropdownMenu.classList.add('hidden');
+
+                    handleSchoolChange(); // Directly show/hide the custom school input
+                });
+
+                dropdownMenu.appendChild(item);
+            });
+        });
+
+        function stepTeamNumber(delta) {
+            const input = document.getElementById('teamNumberInput');
+            const min = parseInt(input.min, 10) || 1;
+            const max = parseInt(input.max, 10) || 99;
+            const current = parseInt(input.value, 10) || min;
+            const next = Math.min(max, Math.max(min, current + delta));
+            input.value = next;
+        }
 
         // Show/hide manual input field depending on selection
         function handleSchoolChange() {
@@ -227,16 +301,39 @@
             document.getElementById('mainMenu').classList.add('hidden');
             document.getElementById('joinView').classList.add('hidden');
             document.getElementById('waitingView').classList.add('hidden');
+            document.getElementById('hostLoginView').classList.add('hidden');
 
             if (viewName === 'mainMenu') {
                 document.getElementById('mainMenu').classList.remove('hidden');
             } else if (viewName === 'join') {
                 document.getElementById('joinView').classList.remove('hidden');
             } else if (viewName === 'host') {
-                window.location.href = 'host.html';
+                // If already unlocked in this tab session, go straight in
+                if (sessionStorage.getItem('quizHostPassword')) {
+                    window.location.href = 'host.html';
+                    return;
+                }
+                document.getElementById('hostLoginError').classList.add('hidden');
+                document.getElementById('hostPasswordInput').value = '';
+                document.getElementById('hostLoginView').classList.remove('hidden');
+                document.getElementById('hostPasswordInput').focus();
             } else if (viewName === 'spectate') {
                 window.location.href = 'spectator.html';
             }
+        }
+
+        function verifyHostLogin() {
+            const password = document.getElementById('hostPasswordInput').value;
+            const errorEl = document.getElementById('hostLoginError');
+
+            socket.emit('verifyHost', password, (res) => {
+                if (res && res.ok) {
+                    sessionStorage.setItem('quizHostPassword', password);
+                    window.location.href = 'host.html';
+                } else {
+                    errorEl.classList.remove('hidden');
+                }
+            });
         }
 
         function joinWithSavedProfile() {
@@ -268,7 +365,7 @@
                 school = document.getElementById('customSchoolInput').value.trim();
             }
 
-            const number = document.getElementById('playerNumber').value;
+            const number = document.getElementById('teamNumberInput').value;
 
             if (!school || !number) {
                 alert('Please select or enter your school and provide your assigned number.');
@@ -287,6 +384,32 @@
                 window.location.href = 'player.html';
             }, 500);
         }
+
+        function restoreInitialView() {
+            const savedSchool = localStorage.getItem('quizPlayerSchool');
+            const savedNumber = localStorage.getItem('quizPlayerNumber');
+
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('joinView').classList.add('hidden');
+            document.getElementById('waitingView').classList.add('hidden');
+            document.getElementById('hostLoginView').classList.add('hidden');
+
+            if (savedSchool && savedNumber) {
+                document.getElementById('savedProfileCard').classList.remove('hidden');
+                document.getElementById('savedProfileText').innerHTML = `<b>${savedSchool}</b> <br>Team #${savedNumber}`;
+            } else {
+                document.getElementById('savedProfileCard').classList.add('hidden');
+                document.getElementById('mainMenu').classList.remove('hidden');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', restoreInitialView);
+
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                restoreInitialView();
+            }
+        });
     </script>
 </body>
 </html>

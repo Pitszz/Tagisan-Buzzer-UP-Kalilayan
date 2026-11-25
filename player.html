@@ -25,20 +25,35 @@
         .header {
             width: 100%;
             max-width: 480px;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 58px 1fr 58px;
             align-items: center;
+            gap: 12px;
             border-bottom: 3px solid var(--red);
             padding-bottom: 12px;
         }
 
+        .header .number-box {
+            width: 58px;
+            min-width: 58px;
+            padding: 8px 6px;
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
         .player-tag {
             font-family: var(--font-display);
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 900;
             color: var(--red);
             text-transform: uppercase;
             letter-spacing: -0.02em;
+            line-height: 1.1;
+            text-align: center;
+        }
+
+        .header-spacer {
+            width: 58px;
         }
 
         .player-tag span {
@@ -72,13 +87,15 @@
 <body>
 
     <div class="header">
+        <div class="number-box">#<span id="displayNumber">0</span></div>
         <div class="player-tag">
             <span id="displaySchool">Loading School...</span>
-            <span class="player-badge-pill">#<span id="displayNumber">0</span></span>
         </div>
-        <a href="#" onclick="confirmLeave(event)" class="back-link">Leave</a>
+        <div class="header-spacer" aria-hidden="true"></div>
+        <!-- hide leave button -->
+        <!-- <a href="#" onclick="confirmBackToMainMenu(event)" class="back-link">Leave</a> -->
     </div>
-
+    
     <div class="buzzer-container">
         <!-- Status Banner: Torn Paper Tape Strip -->
         <div id="statusBanner" class="status-banner">LOCKED OUT</div>
@@ -92,8 +109,10 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="back-navigation.js"></script>
     <script>
         const socket = io();
+        setupBackToMenuFallback({ getSocket: () => socket });
 
         const school = localStorage.getItem('quizPlayerSchool') || 'Unknown School';
         const number = localStorage.getItem('quizPlayerNumber') || '1';
@@ -245,14 +264,25 @@
             }
         });
 
-        function confirmLeave(event) {
-            event.preventDefault();
-            if (confirm("Are you sure you want to leave?")) {
-                // Disconnect socket explicitly before leaving
-                socket.disconnect();
-                window.location.href = 'index.html';
-            }
+        // Add inside player.html (or inside setupBackToMenuFallback in back-navigation.js)
+history.pushState({ inGame: true }, '', window.location.href);
+
+window.addEventListener('popstate', () => {
+    const leaveConfirmed = confirm('Are you sure you want to leave the game and return to the main menu?');
+    if (leaveConfirmed) {
+        const school = localStorage.getItem('quizPlayerSchool');
+        const number = localStorage.getItem('quizPlayerNumber');
+        if (socket && school && number) {
+            socket.emit('playerLeave', { school, number });
         }
+        localStorage.removeItem('quizPlayerSchool');
+        localStorage.removeItem('quizPlayerNumber');
+        window.location.replace('index.html');
+    } else {
+        // Re-lock the history state so the player stays on the buzzer screen
+        history.pushState({ inGame: true }, '', window.location.href);
+    }
+});
     </script>
 </body>
 </html>

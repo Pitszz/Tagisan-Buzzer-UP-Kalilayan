@@ -14,103 +14,64 @@
             padding: 24px 32px;
             background-color: var(--cream);
         }
-
-        .spectator-logos img {
-            height: 64px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .spectator-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 4px solid var(--red);
-            padding-bottom: 14px;
-            margin-bottom: 20px;
-        }
-
-        .spectator-brand-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .spectator-brand-text {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .spectator-brand-text h1 {
-            font-size: clamp(2rem, 3.5vw, 3.2rem);
-            line-height: 0.9;
-            text-align: left;
-            margin: 0;
-        }
-
-        .spectator-sub {
-            font-family: var(--font-display);
-            font-size: 0.85rem;
-            color: var(--red);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-weight: 900;
-            opacity: 0.85;
-        }
-
-        .round-status-tag {
-            font-family: var(--font-display);
-            font-size: 1rem;
-            font-weight: 900;
-            color: var(--red);
-            background: var(--tape);
-            border: 2px solid var(--red);
-            padding: 8px 18px;
-            transform: rotate(1deg);
-            box-shadow: 2px 2px 0 var(--newsprint);
-            letter-spacing: 0.05em;
-        }
     </style>
 </head>
 <body>
 
-    <div class="spectator-stage">
-        <!-- Top Stage Header -->
+<div class="spectator-stage">
+        <!-- Centered Top Stage Header -->
         <div class="spectator-header">
             <div class="spectator-brand-left">
                 <div class="spectator-logos">
-                    <img src="assets/brand/logo-triangle.png" alt="Tagisan 41" onerror="this.style.display='none'">
-                    <img src="assets/brand/kalilayan-seal.png" alt="UP Kalilayan" onerror="this.style.display='none'">
+                    <img src="assets/brand/tagisan-logo.png" alt="Tagisan 41" onerror="this.style.display='none'">
+                    <img src="assets/brand/upk-logo.png" alt="UP Kalilayan" onerror="this.style.display='none'">
                 </div>
                 <div class="spectator-brand-text">
                     <h1 id="displayTitle">Tagisan 41 Quiz Show</h1>
-                    <div class="spectator-sub">UP Kalilayan &bull; Paghasa ng Bayan</div>
+                    <div class="spectator-sub">Paghasa ng Bayan &bull; 41st Edition</div>
                 </div>
             </div>
-            <div class="round-status-tag">FINAL ROUND</div>
         </div>
 
-        <!-- Teams Split Container (Up to 5 Columns) -->
-        <div id="teamsContainer" class="teams-container">
-            <!-- Dynamically populated -->
+        <!-- Teams Container Wrapper with Overlapping Round Badge -->
+        <div class="teams-stage-wrapper">
+            <div class="round-status-tag">FINAL ROUND</div>
+            <div id="teamsContainer" class="teams-container">
+                <!-- Dynamically populated -->
+            </div>
         </div>
     </div>
 
+    <script src="back-navigation.js"></script>
     <script>
         const socket = io();
+        setupBackToMenuFallback({ getSocket: () => socket });
+        const DEFAULT_SCHOOL_LOGO = 'assets/brand/upk-logo.png';
         let previousBuzzState = {}; // Track who was buzzed previously
+        let schoolLogos = {};
+        let schoolLogosLoaded = false;
+        let latestGameState = null;
+
+        socket.on('schoolLogos', (logos) => {
+            schoolLogos = logos || {};
+            schoolLogosLoaded = true;
+            if (latestGameState) {
+                renderGameState(latestGameState);
+            }
+        });
 
         function getSchoolLogoHTML(schoolName) {
-            if (!schoolName) return '';
-
             // "Quezon Science High School" -> "quezon-science-high-school"
-            const slug = schoolName
+            const slug = (schoolName || '')
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '');
 
-            return `<img src="assets/logos/${slug}.png" alt="${schoolName}" onerror="this.style.display='none'">`;
+            const logoSrc = slug
+                ? (schoolLogos[slug] || (schoolLogosLoaded ? DEFAULT_SCHOOL_LOGO : `assets/logos/${slug}.png`))
+                : DEFAULT_SCHOOL_LOGO;
+            const altText = schoolName || 'Tagisan 41';
+            return `<img src="${logoSrc}" alt="${altText}" onerror="this.onerror=null;this.src='${DEFAULT_SCHOOL_LOGO}';">`;
         }
 
         // Initialize the browser's Audio Context
@@ -178,32 +139,23 @@
             }
         }
 
-        socket.on('updateState', (gameState) => {
-            const currentBuzzState = {};
-
-            if (gameState.players) {
-                gameState.players.forEach((p) => {
-                    // Check if a player just buzzed in
-                    if (p.status === 'buzzed') {
-                        currentBuzzState[p.id] = true;
-                        if (!previousBuzzState[p.id]) {
-                            playSound('buzz'); 
-                        }
-                    }
-                });
-            }
-            previousBuzzState = currentBuzzState; // Update state tracker
-
+        function renderGameState(gameState) {
             const titleEl = document.getElementById('displayTitle');
             if (gameState.title) {
                 titleEl.textContent = gameState.title;
+                const match = gameState.title.match(/^(.*?)\s+(quiz show.*)$/i);
+                // if (match) {
+                //     titleEl.innerHTML = `<span class="title-line-1">${match[1]}</span><span class="title-line-2">${match[2]}</span>`;
+                // } else {
+                //     titleEl.innerHTML = `<span class="title-line-1">${gameState.title}</span>`;
+                // }
             }
 
             const containerEl = document.getElementById('teamsContainer');
             containerEl.innerHTML = '';
 
             if (!gameState.players || gameState.players.length === 0) {
-                containerEl.innerHTML = `<div class="waiting-message" style="display:flex; align-items:center; justify-content:center; width:100%; font-family:var(--font-display); font-size:1.3rem; color:var(--halftone); text-transform:uppercase; letter-spacing:0.04em;">Waiting for finalist teams to connect to game...</div>`;
+                containerEl.innerHTML = `<div class="waiting-message" style="display:inline-flex; align-items:center; justify-content:center; width:90%; height:fit-content; margin:auto; padding:0.75rem 1.5rem; font-family:var(--font-display); font-size:0.95rem; color:var(--halftone); text-transform:uppercase; letter-spacing:0.04em; border:2px dashed var(--newsprint); background:transparent; box-shadow:none; font-style: italic;">WAITING FOR TEAMS TO JOIN...</div>`;
                 return;
             }
 
@@ -228,6 +180,26 @@
                     // </div>
                 containerEl.appendChild(column);
             });
+        }
+
+        socket.on('updateState', (gameState) => {
+            latestGameState = gameState;
+            const currentBuzzState = {};
+
+            if (gameState.players) {
+                gameState.players.forEach((p) => {
+                    // Check if a player just buzzed in
+                    if (p.status === 'buzzed') {
+                        currentBuzzState[p.id] = true;
+                        if (!previousBuzzState[p.id]) {
+                            playSound('buzz'); 
+                        }
+                    }
+                });
+            }
+            previousBuzzState = currentBuzzState; // Update state tracker
+
+            renderGameState(gameState);
         });
     </script>
 </body>

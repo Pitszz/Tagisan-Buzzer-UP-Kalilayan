@@ -10,8 +10,10 @@ const io = new Server(server);
 
 app.use(express.static(__dirname));
 
+const HOST_PASSWORD = process.env.HOST_PASSWORD || "tigasan41";
+
 let gameState = {
-    title: "Tagisan Quiz Show",
+    title: "Tagisan 41 Quiz Show",
     players: [],
     wrongAttempts: 0,
     failedPlayerIds: [] // Track who already got it wrong this question
@@ -31,9 +33,34 @@ function getSchoolList() {
     return ["University of the Philippines Diliman", "Ateneo de Manila University", "De La Salle University"];
 }
 
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+// Build a slug -> logo path map from assets/logos so non-.png extensions resolve automatically
+function getSchoolLogoMap() {
+    const logoMap = {};
+    const logosDir = path.join(__dirname, 'assets', 'logos');
+    const imageExtRe = /\.(png|jpe?g|webp|jfif|svg|gif|avif|bmp|ico|tiff?)$/i;
 
+    try {
+        if (!fs.existsSync(logosDir)) return logoMap;
+        const files = fs.readdirSync(logosDir);
+        for (const file of files) {
+            if (!imageExtRe.test(file)) continue;
+            const ext = path.extname(file);
+            const slug = path.basename(file, ext).toLowerCase();
+            // Prefer exact lowercase .png if multiple files share the same slug
+            if (!logoMap[slug] || ext === '.png') {
+                logoMap[slug] = `assets/logos/${encodeURIComponent(file)}`;
+            }
+        }
+    } catch (err) {
+        console.error("Error reading assets/logos:", err);
+    }
+    return logoMap;
+}
+
+io.on('connection', (socket) => {
+    // console.log('A user connected:', socket.id);
+
+    socket.emit('schoolLogos', getSchoolLogoMap());
     socket.emit('updateState', gameState);
     socket.emit('schoolList', getSchoolList());
 
@@ -64,6 +91,7 @@ io.on('connection', (socket) => {
             });
         }
 
+        io.emit('schoolLogos', getSchoolLogoMap());
         io.emit('updateState', gameState);
     });
 
@@ -83,8 +111,21 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Verify host password before allowing access to host.html
+    socket.on('verifyHost', (password, callback) => {
+        if (password === HOST_PASSWORD) {
+            socket.data.isHost = true;
+            if (typeof callback === 'function') callback({ ok: true });
+        } else {
+            if (typeof callback === 'function') callback({ ok: false });
+        }
+    });
+
     // Host controls
     socket.on('hostAction', (actionData) => {
+        if (!socket.data.isHost && actionData.password !== HOST_PASSWORD) {
+            return;
+        }
         if (actionData.type === 'updateTitle') {
             gameState.title = actionData.title;
         } else if (actionData.type === 'lockAll') {
@@ -134,7 +175,7 @@ io.on('connection', (socket) => {
 
     // When a player disconnects
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        // console.log('User disconnected:', socket.id);
         
         gameState.players = gameState.players.filter(p => p.id !== socket.id);
 

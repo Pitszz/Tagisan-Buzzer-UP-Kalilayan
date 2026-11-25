@@ -270,7 +270,7 @@ select, input {
 }
 input::placeholder {
   color: var(--halftone);
-  font-style: italic;
+  /* font-style: italic; */
   text-transform: none;
 }
 select:focus, input:focus {
@@ -457,15 +457,16 @@ label {
    ---------------------------------------------------- */
 .game-title-input {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 2.1rem;
   font-weight: 900;
   text-transform: uppercase;
+  text-align: center;
   padding: 8px 14px;
   background: var(--tape);
   color: var(--red);
   border: 2px solid var(--red);
   transform: rotate(-0.5deg);
-  width: 280px;
+  width: auto;
   outline: none;
 }
 
@@ -512,7 +513,7 @@ label {
 .player-info-text span {
   font-family: var(--font-display);
   font-size: 1.05rem;
-  font-weight: 900;
+  font-weight: 13;
   text-transform: uppercase;
   display: block;
   color: var(--red);
@@ -566,10 +567,19 @@ label {
   align-items: center;
   justify-content: center;
 }
+
 .btn-score:hover {
   background: var(--red);
   color: var(--cream);
+  transform: none;
+  box-shadow: none;
 }
+
+.btn-score:active {
+  transform: none;
+  box-shadow: none;
+}
+
 .btn-score:first-child {
   border-right: 2px solid var(--red);
 }
@@ -723,20 +733,87 @@ button.control-btn.reset {
   flex: 1;
 }
 
-/* Spectator Brand Banner */
 .spectator-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 4px solid var(--red);
-  padding-bottom: 16px;
-  position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* border-bottom: 4px solid var(--red); */
+    margin-top: 8px;
+}
+
+.spectator-brand-left {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
 }
 
 .spectator-logos {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.spectator-logos img {
+    height: 64px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.spectator-brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3px;
+}
+
+.spectator-brand-text #displayTitle {
+    font-size: clamp(2.0rem, 3.2vw, 2.75rem);
+    line-height: 0.95;
+    text-align: center;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.spectator-sub {
+    font-family: var(--font-display);
+    font-size: clamp(1.55rem, 1.25vw, 1.1rem);
+    text-align: center;
+    line-height: 1.1;
+    color: var(--red);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 800;
+    opacity: 0.9;
+}
+
+/* Wrapper to anchor FINAL ROUND on top of the teams rectangle */
+.teams-stage-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-top: 10px;
+}
+
+.round-status-tag {
+    position: absolute;
+    top: -18px;
+    right: 24px;
+    z-index: 20;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--red);
+    background: var(--tape);
+    border: 2px solid var(--red);
+    padding: 6px 18px;
+    transform: rotate(1deg);
+    box-shadow: 2px 2px 0 var(--newsprint);
+    letter-spacing: 0.05em;
 }
 
 .spectator-titles {
@@ -918,7 +995,7 @@ button.control-btn.reset {
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -939,9 +1016,190 @@ button.control-btn.reset {
 }
 
 .info-text {
-  font-size: 0.95rem;
+  font-size: 1.10rem;
   color: var(--red);
   text-align: center;
   line-height: 1.35;
   font-weight: 700;
+}
+
+/* ----------------------------------------------------
+    ZINE DROPDOWN
+   ---------------------------------------------------- */
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  padding: 14px 18px;
+  padding-right: 22px; /* Keeps arrow cleanly inset from the right border */
+  background-color: var(--cream);
+  color: var(--red);
+  border: 2px solid var(--red);
+  border-bottom: 4px solid var(--red);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: none;
+  text-align: left;
+}
+
+.custom-select-trigger:hover,
+.custom-select-wrapper.open .custom-select-trigger {
+  background-color: #FFFFFF;
+  transform: none;
+  box-shadow: none;
+}
+
+.select-chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.custom-select-wrapper.open .select-chevron {
+  transform: rotate(180deg);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  background-color: var(--cream);
+  border: 2px solid var(--red);
+  box-shadow: 4px 4px 0 var(--newsprint);
+  z-index: 50;
+  padding: 4px 6px 4px 0; /* Right padding keeps the scrollbar away from long school names */
+}
+
+.custom-select-option {
+  padding: 10px 14px;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition: background-color 0.08s ease, color 0.08s ease;
+}
+
+/* Custom Branded Hover & Selected Highlight (Replaces OS Grey) */
+.custom-select-option:hover,
+.custom-select-option.selected {
+  background-color: var(--red);
+  color: var(--cream);
+}
+
+/* Thin Custom Scrollbar (Newsprint track + Red thumb, separated from text) */
+.custom-select-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-menu::-webkit-scrollbar-track {
+  background: var(--newsprint);
+  margin: 4px 0;
+}
+
+.custom-select-menu::-webkit-scrollbar-thumb {
+  background: var(--red);
+}
+
+.custom-select-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--red-deep);
+}
+
+/* ----------------------------------------------------
+   CUSTOM NUMBER STEPPER (UP / DOWN ARROWS)
+   ---------------------------------------------------- */
+.number-stepper {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border: 2px solid var(--red);
+  border-bottom: 4px solid var(--red);
+  background-color: var(--cream);
+}
+
+.number-stepper input[type="number"] {
+  border: none;
+  flex: 1;
+  padding: 12px 16px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: var(--red);
+  background: transparent;
+}
+
+.number-stepper input[type="number"] {
+  -webkit-appearance: none;
+  appearance: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Hide Chrome/Safari/Edge native spinners */
+.number-stepper input[type="number"]::-webkit-outer-spin-button,
+.number-stepper input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+  margin: 0;
+}
+
+.number-stepper input[type="number"]:focus {
+  outline: none;
+  background-color: #FFFFFF;
+}
+
+.stepper-arrows {
+  display: flex;
+  flex-direction: column;
+  width: 42px;
+  border-left: 2px solid var(--red);
+  flex-shrink: 0;
+}
+
+.stepper-btn {
+  flex: 1;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background-color: var(--cream);
+  color: var(--red);
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.stepper-btn:first-child {
+  border-bottom: 2px solid var(--red);
+}
+
+.stepper-btn:hover {
+  background-color: var(--red);
+  color: var(--cream);
+  transform: none;
+  box-shadow: none;
+}
+
+.stepper-btn:active {
+  background-color: var(--red-deep);
+  color: var(--cream);
+  transform: none;
+  box-shadow: none;
 }
