@@ -130,41 +130,16 @@
     <script src="back-navigation.js"></script>
     <script>
         const socket = io();
-        const hostPassword = sessionStorage.getItem('quizHostPassword');
-
-        // Kick out anyone who types /host.html directly without logging in
-        if (!hostPassword) {
-            window.location.replace('index.html');
-        } else {
-            socket.emit('verifyHost', hostPassword, (res) => {
-                if (!res || !res.ok) {
-                    sessionStorage.removeItem('quizHostPassword');
-                    window.location.replace('index.html');
-                }
-            });
-        }
-
-        // Re-authenticate automatically if the socket briefly disconnects and reconnects
-        socket.on('connect', () => {
-            if (hostPassword) {
-                socket.emit('verifyHost', hostPassword);
-            }
-        });
-
         let gameState = { title: "Tagisan 41 Quiz Show", players: [] };
 
         setupBackToMenuFallback({
             getSocket: () => socket,
             onBeforeLeave: () => {
-                sessionStorage.removeItem('quizHostPassword');
+                // Clear any leftover player session tokens so it doesn't trigger player reconnection
                 localStorage.removeItem('quizPlayerSchool');
                 localStorage.removeItem('quizPlayerNumber');
             }
         });
-
-        function sendHostAction(payload) {
-            socket.emit('hostAction', { ...payload, password: hostPassword });
-        }
 
         socket.on('updateState', (serverState) => {
             gameState = serverState;
@@ -208,7 +183,10 @@
 
                 let statusClass = 'ready';
                 let statusText = 'Ready';
-                if (p.status === 'buzzed') {
+                if (p.connected === false) {
+                    statusClass = 'locked';
+                    statusText = 'Disconnected';
+                } else if (p.status === 'buzzed') {
                     statusClass = 'buzzed';
                     statusText = 'Buzzed';
                 } else if (p.status === 'locked') {
@@ -302,36 +280,50 @@
         function handleCorrectBuzzer() {
             playSound('correct');
             triggerVibration([100, 50, 100]);
-            sendHostAction({ type: 'correct' });
+            socket.emit('hostAction', { type: 'correct' });
         }
 
         function handleWrongBuzzer() {
             playSound('wrong');
             triggerVibration(400);
-            sendHostAction({ type: 'wrong' });
+            socket.emit('hostAction', { type: 'wrong' });
         }
 
         function updateGameTitle() {
             const val = document.getElementById('gameTitleInput').value;
-            sendHostAction({ type: 'updateTitle', title: val });
+            socket.emit('hostAction', { type: 'updateTitle', title: val });
         }
 
         function adjustScore(index, delta) {
-            sendHostAction({ type: 'adjustScore', index: index, delta: delta });
+            socket.emit('hostAction', { type: 'adjustScore', index: index, delta: delta });
         }
 
         function lockAllPlayers() {
-            sendHostAction({ type: 'lockAll' });
+            socket.emit('hostAction', { type: 'lockAll' });
         }
 
         function unlockAllPlayers() {
-            sendHostAction({ type: 'unlockAll' });
+            socket.emit('hostAction', { type: 'unlockAll' });
         }
 
         function confirmResetScores() {
-            if (confirm("Are you sure you want to reset all player scores to 0?")) {
-                sendHostAction({ type: 'resetScores' });
+            if (confirm("Are you sure you want to reset all scores to 0 and remove disconnected players?")) {
+                socket.emit('hostAction', { type: 'resetScores' });
             }
+        }
+
+        const hostPassword = sessionStorage.getItem('quizHostPassword');
+
+        // Kick out anyone who types /host.html directly without logging in
+        if (!hostPassword) {
+            window.location.replace('index.html');
+        } else {
+            socket.emit('verifyHost', hostPassword, (res) => {
+                if (!res || !res.ok) {
+                    sessionStorage.removeItem('quizHostPassword');
+                    window.location.replace('index.html');
+                }
+            });
         }
     </script>
 </body>

@@ -121,15 +121,30 @@
         document.getElementById('displayNumber').textContent = number;
 
         let buzzerState = 'locked';
+        let previousBuzzerState = 'locked';
 
-        // Re-register player on load in case they refreshed
-        socket.emit('playerJoin', { school: school, number: number });
+        // Register/re-register player on initial connect and any automatic reconnect
+        socket.on('connect', () => {
+            socket.emit('playerJoin', { school: school, number: number });
+        });
+
+        socket.on('joinError', (err) => {
+            alert((err && err.message) || 'This school is already active in the game.');
+            localStorage.removeItem('quizPlayerSchool');
+            localStorage.removeItem('quizPlayerNumber');
+            socket.disconnect();
+            window.location.replace('index.html');
+        });
 
         // Listen for state updates from the server
         socket.on('updateState', (gameState) => {
-            const me = gameState.players.find(p => p.school === school && p.number == number);
+            const normalizedSchool = school.trim().toLowerCase();
+            const me = gameState.players.find(
+                p => p.id === socket.id || String(p.school || '').trim().toLowerCase() === normalizedSchool
+            );
             if (me) {
                 buzzerState = me.status; // 'ready', 'buzzed', or 'locked'
+                previousBuzzerState = buzzerState;
                 updateBuzzerUI();
             }
         });
@@ -253,36 +268,6 @@
             }
         }
 
-        let previousBuzzerState = 'locked';
-
-        socket.on('updateState', (gameState) => {
-            const me = gameState.players.find(p => p.school === school && p.number == number);
-            if (me) {
-                buzzerState = me.status;
-                previousBuzzerState = buzzerState;
-                updateBuzzerUI();
-            }
-        });
-
-        // Add inside player.html (or inside setupBackToMenuFallback in back-navigation.js)
-history.pushState({ inGame: true }, '', window.location.href);
-
-window.addEventListener('popstate', () => {
-    const leaveConfirmed = confirm('Are you sure you want to leave the game and return to the main menu?');
-    if (leaveConfirmed) {
-        const school = localStorage.getItem('quizPlayerSchool');
-        const number = localStorage.getItem('quizPlayerNumber');
-        if (socket && school && number) {
-            socket.emit('playerLeave', { school, number });
-        }
-        localStorage.removeItem('quizPlayerSchool');
-        localStorage.removeItem('quizPlayerNumber');
-        window.location.replace('index.html');
-    } else {
-        // Re-lock the history state so the player stays on the buzzer screen
-        history.pushState({ inGame: true }, '', window.location.href);
-    }
-});
     </script>
 </body>
 </html>

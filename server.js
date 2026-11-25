@@ -11,13 +11,67 @@ const io = new Server(server);
 app.use(express.static(__dirname));
 
 const HOST_PASSWORD = process.env.HOST_PASSWORD || "tigasan41";
+const STATE_FILE = path.join(__dirname, 'gamestate.json');
 
-let gameState = {
-    title: "Tagisan 41 Quiz Show",
-    players: [],
-    wrongAttempts: 0,
-    failedPlayerIds: [] // Track who already got it wrong this question
-};
+function getTeamKey(player) {
+    return `${player.school}::${String(player.number)}`;
+}
+
+function normalizeSchoolName(school) {
+    return String(school || '').trim().toLowerCase();
+}
+
+function isSchoolActive(school, excludeSocketId = null) {
+    const normalized = normalizeSchoolName(school);
+    if (!normalized) return false;
+    return gameState.players.some(
+        p => p.connected && p.id !== excludeSocketId && normalizeSchoolName(p.school) === normalized
+    );
+}
+
+function loadGameState() {
+    try {
+        if (fs.existsSync(STATE_FILE)) {
+            const raw = fs.readFileSync(STATE_FILE, 'utf8');
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.players)) {
+                // Reset live socket connection flags on server boot so teams can reconnect cleanly
+                const players = parsed.players.map(p => ({
+                    ...p,
+                    number: String(p.number),
+                    score: Number(p.score) || 0,
+                    status: p.status || 'locked',
+                    connected: false
+                }));
+                return {
+                    title: parsed.title || "Tagisan 41 Quiz Show",
+                    players,
+                    wrongAttempts: Number(parsed.wrongAttempts) || 0,
+                    failedTeamKeys: Array.isArray(parsed.failedTeamKeys) ? parsed.failedTeamKeys : []
+                };
+            }
+        }
+    } catch (err) {
+        console.error("Failed to load gamestate.json:", err);
+    }
+
+    return {
+        title: "Tagisan 41 Quiz Show",
+        players: [],
+        wrongAttempts: 0,
+        failedTeamKeys: []
+    };
+}
+
+function saveGameState() {
+    try {
+        fs.writeFileSync(STATE_FILE, JSON.stringify(gameState, null, 2), 'utf8');
+    } catch (err) {
+        console.error("Failed to save gamestate.json:", err);
+    }
+}
+
+let gameState = loadGameState();
 
 // Function to read schools from schools.txt
 function getSchoolList() {
@@ -64,34 +118,63 @@ io.on('connection', (socket) => {
     socket.emit('updateState', gameState);
     socket.emit('schoolList', getSchoolList());
 
-    // When a player joins
+    // Check whether a school already has an active connected player
+    socket.on('checkSchoolAvailability', (school, callback) => {
+        if (typeof callback !== 'function') return;
+        const schoolName = String(school || '').trim();
+        if (!schoolName) {
+            callback({ ok: false, message: 'Please enter a valid school name.' });
+            return;
+        }
+        if (isSchoolActive(schoolName, socket.id)) {
+            callback({ ok: false, message: `${schoolName} is already active in the game.` });
+            return;
+        }
+        callback({ ok: true });
+    });
+
+    // When a player joins or reconnects
     socket.on('playerJoin', (playerData) => {
         if (!playerData || !playerData.school) return;
 
+        const schoolName = String(playerData.school).trim();
+        if (!schoolName) return;
+
+        if (isSchoolActive(schoolName, socket.id)) {
+            socket.emit('joinError', { message: `${schoolName} is already active in the game.` });
+            return;
+        }
+
         const playerNum = String(playerData.number);
-        let existing = gameState.players.find(p => p.school === playerData.school && String(p.number) === playerNum);
-        
+        const normalizedSchool = normalizeSchoolName(schoolName);
+        const teamKey = getTeamKey({ school: schoolName, number: playerNum });
+        const anyoneBuzzed = gameState.players.some(p => p.status === 'buzzed');
+        const roundOpen = !anyoneBuzzed && gameState.players.some(p => p.connected && p.status === 'ready');
+        const hasFailedThisRound = gameState.failedTeamKeys.includes(teamKey);
+
+        let existing = gameState.players.find(p => normalizeSchoolName(p.school) === normalizedSchool);
+
         if (existing) {
             existing.id = socket.id;
+            existing.school = schoolName;
+            existing.number = playerNum;
+            existing.connected = true;
+            if (existing.status !== 'buzzed') {
+                existing.status = (roundOpen && !hasFailedThisRound) ? 'ready' : 'locked';
+            }
         } else {
             gameState.players.push({
                 id: socket.id,
-                school: playerData.school,
+                school: schoolName,
                 number: playerNum,
                 score: 0,
-                status: 'locked' 
-            });
-        }
-
-        // Lock everyone unless someone is already buzzed in
-        const anyoneBuzzed = gameState.players.some(p => p.status === 'buzzed');
-        if (!anyoneBuzzed) {
-            gameState.players.forEach(p => {
-                p.status = 'locked';
+                status: (roundOpen && !hasFailedThisRound) ? 'ready' : 'locked',
+                connected: true
             });
         }
 
         io.emit('schoolLogos', getSchoolLogoMap());
+        saveGameState();
         io.emit('updateState', gameState);
     });
 
@@ -106,6 +189,7 @@ io.on('connection', (socket) => {
                 gameState.players.forEach(p => {
                     if (p.status === 'ready') p.status = 'locked';
                 });
+                saveGameState();
                 io.emit('updateState', gameState);
             }
         }
@@ -126,13 +210,14 @@ io.on('connection', (socket) => {
         if (!socket.data.isHost && actionData.password !== HOST_PASSWORD) {
             return;
         }
+
         if (actionData.type === 'updateTitle') {
             gameState.title = actionData.title;
         } else if (actionData.type === 'lockAll') {
             gameState.players.forEach(p => p.status = 'locked');
         } else if (actionData.type === 'unlockAll') {
             gameState.wrongAttempts = 0;
-            gameState.failedPlayerIds = []; // Clear failed list for new question
+            gameState.failedTeamKeys = []; // Clear failed list for new question
             gameState.players.forEach(p => p.status = 'ready');
         } else if (actionData.type === 'correct') {
             const buzzed = gameState.players.find(p => p.status === 'buzzed');
@@ -140,13 +225,16 @@ io.on('connection', (socket) => {
                 buzzed.score += 1;
             }
             gameState.wrongAttempts = 0;
-            gameState.failedPlayerIds = [];
+            gameState.failedTeamKeys = [];
             gameState.players.forEach(p => p.status = 'locked');
         } else if (actionData.type === 'wrong') {
             const buzzed = gameState.players.find(p => p.status === 'buzzed');
             if (buzzed) {
                 buzzed.status = 'locked';
-                gameState.failedPlayerIds.push(buzzed.id); // Add to permanent fail list for this round
+                const key = getTeamKey(buzzed);
+                if (!gameState.failedTeamKeys.includes(key)) {
+                    gameState.failedTeamKeys.push(key); // Add to permanent fail list for this round
+                }
                 gameState.wrongAttempts += 1;
             }
 
@@ -156,7 +244,7 @@ io.on('connection', (socket) => {
             } else {
                 // Unlock everyone EXCEPT those who already failed this round
                 gameState.players.forEach(p => {
-                    if (!gameState.failedPlayerIds.includes(p.id)) {
+                    if (!gameState.failedTeamKeys.includes(getTeamKey(p))) {
                         p.status = 'ready'; // Open up for the steal!
                     }
                 });
@@ -168,32 +256,35 @@ io.on('connection', (socket) => {
                 player.score = Math.max(0, player.score + delta);
             }
         } else if (actionData.type === 'resetScores') {
-            gameState.players.forEach(p => p.score = 0);
+            gameState.wrongAttempts = 0;
+            gameState.failedTeamKeys = [];
+            // Remove disconnected players and reset active players' scores/status without disconnecting anyone
+            gameState.players = gameState.players
+                .filter(p => p.connected)
+                .map(p => ({
+                    ...p,
+                    score: 0,
+                    status: 'locked'
+                }));
         }
+        saveGameState();
         io.emit('updateState', gameState);
     });
 
-    // When a player disconnects
+    // When a socket disconnects, keep player scores/records in gameState for reconnection
     socket.on('disconnect', () => {
-        // console.log('User disconnected:', socket.id);
-        
-        gameState.players = gameState.players.filter(p => p.id !== socket.id);
+        const player = gameState.players.find(p => p.id === socket.id);
+        if (!player) return;
 
-        // Lock everyone unless someone is already buzzed in
-        const anyoneBuzzed = gameState.players.some(p => p.status === 'buzzed');
-        if (!anyoneBuzzed) {
-            gameState.players.forEach(p => {
-                p.status = 'locked';
-            });
-        }
-
+        player.connected = false;
+        saveGameState();
         io.emit('updateState', gameState);
     });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Quiz server running!`);
+    console.log(`Tagisan Buzzer is Running!`);
     console.log(`  Host (this laptop):  http://localhost:${PORT}/index.html`);
 
     // Show the LAN addresses that players and the projector should open

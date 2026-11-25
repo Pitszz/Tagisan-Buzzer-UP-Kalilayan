@@ -1102,6 +1102,16 @@ button.control-btn.reset {
   color: var(--cream);
 }
 
+.custom-select-option.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.custom-select-option.disabled:hover {
+  background-color: transparent;
+  color: var(--red);
+}
+
 /* Thin Custom Scrollbar (Newsprint track + Red thumb, separated from text) */
 .custom-select-menu::-webkit-scrollbar {
   width: 6px;

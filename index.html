@@ -265,30 +265,54 @@
             }
         });
 
-        socket.on('schoolList', (schools) => {
+        let cachedSchools = [];
+        let activeSchools = new Set();
+
+        function renderSchoolOptions() {
             dropdownMenu.innerHTML = '';
-            const allOptions = [...schools, 'OTHER'];
+            const allOptions = [...cachedSchools, 'OTHER'];
 
             allOptions.forEach((school) => {
+                const isActive = school !== 'OTHER' && activeSchools.has(school.trim().toLowerCase());
                 const item = document.createElement('div');
-                item.className = 'custom-select-option';
-                item.textContent = school;
+                item.className = `custom-select-option${isActive ? ' disabled' : ''}`;
+                item.textContent = isActive ? `${school} (ACTIVE)` : school;
 
-                item.addEventListener('click', () => {
-                    hiddenSchoolInput.value = school;
-                    dropdownLabel.textContent = school;
+                if (!isActive) {
+                    if (hiddenSchoolInput.value === school) {
+                        item.classList.add('selected');
+                    }
+                    item.addEventListener('click', () => {
+                        hiddenSchoolInput.value = school;
+                        dropdownLabel.textContent = school;
 
-                    dropdownMenu.querySelectorAll('.custom-select-option').forEach(el => el.classList.remove('selected'));
-                    item.classList.add('selected');
+                        dropdownMenu.querySelectorAll('.custom-select-option').forEach(el => el.classList.remove('selected'));
+                        item.classList.add('selected');
 
-                    dropdownWrapper.classList.remove('open');
-                    dropdownMenu.classList.add('hidden');
+                        dropdownWrapper.classList.remove('open');
+                        dropdownMenu.classList.add('hidden');
 
-                    handleSchoolChange(); // Directly show/hide the custom school input
-                });
+                        handleSchoolChange(); // Directly show/hide the custom school input
+                    });
+                }
 
                 dropdownMenu.appendChild(item);
             });
+        }
+
+        socket.on('schoolList', (schools) => {
+            cachedSchools = schools || [];
+            renderSchoolOptions();
+        });
+
+        socket.on('updateState', (state) => {
+            activeSchools = new Set(
+                (state && state.players ? state.players : [])
+                    .filter(p => p.connected)
+                    .map(p => String(p.school || '').trim().toLowerCase())
+                    .filter(Boolean)
+            );
+            renderSchoolOptions();
         });
 
         function stepTeamNumber(delta) {
@@ -368,16 +392,23 @@
             const school = localStorage.getItem('quizPlayerSchool');
             const number = localStorage.getItem('quizPlayerNumber');
 
-            document.getElementById('savedProfileCard').classList.add('hidden');
-            document.getElementById('waitingView').classList.remove('hidden');
-            document.getElementById('waitingStatusText').innerHTML = `
-                <span class="waiting-kicker">REJOINING AS</span>
-                <span class="waiting-school">${school.toUpperCase()}</span>
-                <span class="waiting-team">TEAM #${number}</span>
-            `;
-            setTimeout(() => {
-                window.location.href = 'player.html';
-            }, 500);
+            socket.emit('checkSchoolAvailability', school, (res) => {
+                if (res && !res.ok) {
+                    alert(res.message || `${school} is already active in the game.`);
+                    return;
+                }
+
+                document.getElementById('savedProfileCard').classList.add('hidden');
+                document.getElementById('waitingView').classList.remove('hidden');
+                document.getElementById('waitingStatusText').innerHTML = `
+                    <span class="waiting-kicker">REJOINING AS</span>
+                    <span class="waiting-school">${school.toUpperCase()}</span>
+                    <span class="waiting-team">TEAM #${number}</span>
+                `;
+                setTimeout(() => {
+                    window.location.href = 'player.html';
+                }, 500);
+            });
         }
 
         function clearSavedProfile() {
@@ -403,20 +434,27 @@
                 return;
             }
 
-            // Save info locally for persistence
-            localStorage.setItem('quizPlayerSchool', school);
-            localStorage.setItem('quizPlayerNumber', number);
+            socket.emit('checkSchoolAvailability', school, (res) => {
+                if (res && !res.ok) {
+                    alert(res.message || `${school} is already active in the game.`);
+                    return;
+                }
 
-            document.getElementById('joinView').classList.add('hidden');
-            document.getElementById('waitingView').classList.remove('hidden');
-            document.getElementById('waitingStatusText').innerHTML = `
-                <span class="waiting-kicker">JOINING AS</span>
-                <span class="waiting-school">${school.toUpperCase()}</span>
-                <span class="waiting-team">TEAM #${number}</span>
-            `;
-            setTimeout(() => {
-                window.location.href = 'player.html';
-            }, 500);
+                // Save info locally for persistence
+                localStorage.setItem('quizPlayerSchool', school);
+                localStorage.setItem('quizPlayerNumber', number);
+
+                document.getElementById('joinView').classList.add('hidden');
+                document.getElementById('waitingView').classList.remove('hidden');
+                document.getElementById('waitingStatusText').innerHTML = `
+                    <span class="waiting-kicker">JOINING AS</span>
+                    <span class="waiting-school">${school.toUpperCase()}</span>
+                    <span class="waiting-team">TEAM #${number}</span>
+                `;
+                setTimeout(() => {
+                    window.location.href = 'player.html';
+                }, 500);
+            });
         }
 
         function restoreInitialView() {
