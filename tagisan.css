@@ -965,7 +965,7 @@ button.score-toggle-btn.active {
 }
 .team-column.rank-1 .team-school {
   color: var(--cream);
-  font-size: clamp(1.5rem, 1.8vw, 5.2rem);
+  font-size: clamp(1.5rem, 1.8vw, 2.0rem);
 }
 .team-column.rank-1 .team-number-badge {
   background-color: var(--cream);
