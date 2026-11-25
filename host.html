@@ -36,12 +36,6 @@
             gap: 12px;
         }
 
-        .header-top h1 {
-            font-size: 1.6rem;
-            text-align: left;
-            margin: 0;
-        }
-
         .card-header-bar {
             display: flex;
             justify-content: space-between;
@@ -128,22 +122,41 @@
     </div>
 
     <script src="back-navigation.js"></script>
+    <script src="client-utils.js"></script>
     <script>
+        // ====================================================
+        // 1. CONNECTION, NAVIGATION & HOST AUTH GUARD
+        // ====================================================
         const socket = io();
         let gameState = { title: "Tagisan 41 Quiz Show", players: [] };
 
         setupBackToMenuFallback({
             getSocket: () => socket,
             onBeforeLeave: () => {
-                // Clear any leftover player session tokens so it doesn't trigger player reconnection
+                // Clear saved player tokens so leaving host view doesn't trigger a player rejoin prompt
                 localStorage.removeItem('quizPlayerSchool');
                 localStorage.removeItem('quizPlayerNumber');
             }
         });
 
+        const hostPassword = sessionStorage.getItem('quizHostPassword');
+        if (!hostPassword) {
+            window.location.replace('index.html');
+        } else {
+            socket.emit('verifyHost', hostPassword, (res) => {
+                if (!res || !res.ok) {
+                    sessionStorage.removeItem('quizHostPassword');
+                    window.location.replace('index.html');
+                }
+            });
+        }
+
+        // ====================================================
+        // 2. LIVE DASHBOARD RENDERING
+        // ====================================================
         socket.on('updateState', (serverState) => {
             gameState = serverState;
-            
+
             const titleInput = document.getElementById('gameTitleInput');
             if (titleInput && gameState.title && titleInput.value !== gameState.title) {
                 titleInput.value = gameState.title;
@@ -157,11 +170,10 @@
             const raiserPopup = document.getElementById('activeRaiserPopup');
             const raiserNameDisplay = document.getElementById('raiserNameDisplay');
             if (!listEl) return;
-            
+
             listEl.innerHTML = '';
 
             const buzzedPlayer = gameState.players.find(p => p.status === 'buzzed');
-
             if (buzzedPlayer) {
                 raiserPopup.classList.remove('hidden');
                 raiserNameDisplay.textContent = `${buzzedPlayer.school} (#${buzzedPlayer.number})`;
@@ -217,66 +229,9 @@
             });
         }
 
-        // Initialize Audio Context for evaluation sound cues
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new AudioContext();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        function playSound(type) {
-            initAudio();
-            if (!audioCtx) return;
-
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            if (type === 'correct') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);       // C5
-                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
-                osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
-                
-                gainNode.gain.setValueAtTime(0.15, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-                
-                osc.start(now);
-                osc.stop(now + 0.45);
-            } 
-            else if (type === 'wrong') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(180, now);
-                osc.frequency.setValueAtTime(110, now + 0.15);
-                
-                gainNode.gain.setValueAtTime(0.2, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                
-                osc.start(now);
-                osc.stop(now + 0.35);
-            }
-        }
-
-        function triggerVibration(pattern = 200) {
-            if ("vibrate" in navigator) {
-                try {
-                    navigator.vibrate(pattern);
-                } catch (err) {
-                    console.log("Vibration not supported:", err);
-                }
-            }
-        }
-
+        // ====================================================
+        // 3. HOST ACTIONS (JUDGING & GAME CONTROLS)
+        // ====================================================
         function handleCorrectBuzzer() {
             playSound('correct');
             triggerVibration([100, 50, 100]);
@@ -295,7 +250,7 @@
         }
 
         function adjustScore(index, delta) {
-            socket.emit('hostAction', { type: 'adjustScore', index: index, delta: delta });
+            socket.emit('hostAction', { type: 'adjustScore', index, delta });
         }
 
         function lockAllPlayers() {
@@ -310,20 +265,6 @@
             if (confirm("Are you sure you want to reset all scores to 0 and remove disconnected players?")) {
                 socket.emit('hostAction', { type: 'resetScores' });
             }
-        }
-
-        const hostPassword = sessionStorage.getItem('quizHostPassword');
-
-        // Kick out anyone who types /host.html directly without logging in
-        if (!hostPassword) {
-            window.location.replace('index.html');
-        } else {
-            socket.emit('verifyHost', hostPassword, (res) => {
-                if (!res || !res.ok) {
-                    sessionStorage.removeItem('quizHostPassword');
-                    window.location.replace('index.html');
-                }
-            });
         }
     </script>
 </body>

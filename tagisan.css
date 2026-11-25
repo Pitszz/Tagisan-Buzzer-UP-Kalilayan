@@ -309,6 +309,31 @@ label {
   color: var(--cream);
 }
 
+/* Minimal Icon-Only Fullscreen Button */
+.fullscreen-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background-color: var(--cream);
+  color: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: 2px 2px 0 var(--newsprint);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fullscreen-btn:hover {
+  background-color: var(--red);
+  color: var(--cream);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--newsprint);
+}
+.fullscreen-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--newsprint);
+}
+
 /* ----------------------------------------------------
    7. STATUS SEMANTICS
    ---------------------------------------------------- */
@@ -396,26 +421,35 @@ label {
 }
 
 /* Responsive Giant Buzzer (image-based faces)
-   One PNG per state, in assets/buzzer/:
-     ready  -> buzzer-ready.png   (no extra class on the button)
-     buzzed -> buzzer-buzzed.png  (.buzzed)
-     locked -> buzzer-locked.png  (.locked)
+   Supports all three asset sets in assets/buzzer/ without clipping:
+     - buzzer-{ready,buzzed,locked}.png  (default)
+     - circle-{ready,buzzed,locked}.png  (add .buzzer-circle or swap URLs)
+     - newbtn-{ready,buzzed,locked}.png  (add .buzzer-newbtn or swap URLs)
    Pressed feedback re-uses the ready image (shrinks + darkens). */
 .buzzer-btn {
   --buzzer-label-color: transparent; /* set to var(--cream) to show the "BUZZ" text on top of the image */
 
-  width: min(72vw, 300px);
-  height: min(72vw, 300px);
+  /* Buzzer size & logo scale:
+     - Make the whole button bigger: raise width/height (e.g. min(96vw, 460px)).
+     - Make the PNG logo fill more of the circle without clipping: change background-size
+       from `contain` to `115%`–`135%` (helpful if the PNG has wide transparent padding). */
+  width: min(90vw, 360px);
+  height: min(90vw, 360px);
   min-width: 240px;
   min-height: 240px;
   padding: 0;
   border: none;
   border-radius: 50%;
+  /* Crescent moon strike (from border-radius: 50% + offset box-shadow):
+     - Hide it: leave these box-shadow lines commented out or set `box-shadow: none;`.
+     - Pull it closer to the logo: zoom the image with `background-size` (e.g. 115%) OR add a
+       negative spread radius like `box-shadow: 3px 3px 0 -10px var(--red);` to shrink the crescent inward. */
+  /* box-shadow: 3px 3px 0 var(--red); Red crescent/uneven strike behind circular buzzers */
   background-color: transparent;
-  background-image: url('assets/buzzer/buzzer-ready.png');
+  background-image: url('assets/buzzer/rm-ready.png');
   background-repeat: no-repeat;
   background-position: center;
-  background-size: contain;
+  background-size: 140%;
   color: var(--buzzer-label-color);
   font-family: var(--font-display);
   font-size: clamp(2rem, 7vw, 3.25rem);
@@ -427,29 +461,76 @@ label {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.06s ease, filter 0.06s ease;
+  animation: buzzerIdleFloat 4.5s ease-in-out infinite;
+  transition: transform 0.06s ease, filter 0.06s ease, box-shadow 0.06s ease;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Pressed (finger down while ready) */
-.buzzer-btn:active:not(:disabled) {
-  transform: scale(0.95);
-  filter: brightness(0.88);
+.buzzer-btn:hover {
+  transform: none;
+  /* box-shadow: 4px 4px 0 var(--red); */
 }
 
-/* State: Buzzed first (pulsing) */
+/* Pressed (finger down while ready) */
+.buzzer-btn:active:not(:disabled) {
+  animation: none;
+  transform: scale(0.95);
+  filter: brightness(0.88);
+  /* box-shadow: 1px 1px 0 var(--red); */
+}
+
+/* State: Buzzed first */
 .buzzer-btn.buzzed {
-  background-image: url('assets/buzzer/buzzer-buzzed.png');
-  animation: inkPulse 1.2s infinite ease-in-out;
+  background-image: url('assets/buzzer/rm-buzzed.png');
+  animation: buzzerBuzzedRest 2.2s ease-in-out infinite;
   cursor: default;
 }
 
 /* State: Locked out */
 .buzzer-btn.locked {
-  background-image: url('assets/buzzer/buzzer-locked.png');
+  background-image: url('assets/buzzer/rm-locked.png');
+  animation: none;
   cursor: not-allowed;
+}
+
+/* Optional theme modifiers for the newer flat-zine asset sets */
+.buzzer-btn.buzzer-circle {
+  background-image: url('assets/buzzer/circle-ready.png');
+}
+.buzzer-btn.buzzer-circle.buzzed {
+  background-image: url('assets/buzzer/circle-buzzed.png');
+}
+.buzzer-btn.buzzer-circle.locked {
+  background-image: url('assets/buzzer/circle-locked.png');
+}
+
+.buzzer-btn.buzzer-newbtn {
+  border-radius: 0;
+  box-shadow: none;
+  background-size: 135%;
+  background-image: url('assets/buzzer/newbtn-ready.png');
+}
+.buzzer-btn.buzzer-newbtn:hover,
+.buzzer-btn.buzzer-newbtn:active:not(:disabled) {
+  box-shadow: none;
+}
+.buzzer-btn.buzzer-newbtn.buzzed {
+  background-image: url('assets/buzzer/newbtn-buzzed.png');
+}
+.buzzer-btn.buzzer-newbtn.locked {
+  background-image: url('assets/buzzer/newbtn-locked.png');
+}
+
+@keyframes buzzerIdleFloat {
+  0%, 100% { transform: scale(1) rotate(-0.4deg); }
+  50% { transform: scale(1.015) rotate(0.4deg); }
+}
+
+@keyframes buzzerBuzzedRest {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.022); }
 }
 
 /* ----------------------------------------------------
@@ -513,7 +594,7 @@ label {
 .player-info-text span {
   font-family: var(--font-display);
   font-size: 1.05rem;
-  font-weight: 13;
+  font-weight: 800;
   text-transform: uppercase;
   display: block;
   color: var(--red);
@@ -734,11 +815,18 @@ button.control-btn.reset {
 }
 
 .spectator-header {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     /* border-bottom: 4px solid var(--red); */
     margin-top: 8px;
+}
+
+.spectator-fullscreen-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 
 .spectator-brand-left {
@@ -755,6 +843,7 @@ button.control-btn.reset {
     flex-shrink: 0;
 }
 
+/* Header brand logos (increase `height` to make Tagisan & UPK logos bigger) */
 .spectator-logos img {
     height: 64px;
     width: auto;
@@ -814,27 +903,6 @@ button.control-btn.reset {
     transform: rotate(1deg);
     box-shadow: 2px 2px 0 var(--newsprint);
     letter-spacing: 0.05em;
-}
-
-.spectator-titles {
-  text-align: right;
-}
-
-.spectator-titles h1 {
-  font-size: clamp(2.2rem, 3.8vw, 3.6rem);
-  line-height: 0.9;
-  letter-spacing: -0.05em;
-}
-
-.spectator-tagline {
-  font-family: var(--font-display);
-  font-size: clamp(0.75rem, 1.2vw, 1rem);
-  font-weight: 900;
-  color: var(--red);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  margin-top: 4px;
-  opacity: 0.85;
 }
 
 /* Evenly Split Teams Container */
@@ -934,7 +1002,8 @@ button.control-btn.reset {
   text-transform: uppercase;
 }
 
-/* Prominent Circular School Logo Slot with Fallback */
+/* Prominent Circular School Logo Slot with Fallback
+   To make team logos bigger on spectator.html: raise width/height below and lower `padding` on `.school-logo img`. */
 .school-logo {
   width: 240px;
   height: 240px;
@@ -1024,7 +1093,7 @@ button.control-btn.reset {
 }
 
 /* ----------------------------------------------------
-    ZINE DROPDOWN
+   13. ZINE SCHOOL DROPDOWN
    ---------------------------------------------------- */
 .custom-select-wrapper {
   position: relative;
@@ -1131,7 +1200,7 @@ button.control-btn.reset {
 }
 
 /* ----------------------------------------------------
-   CUSTOM NUMBER STEPPER (UP / DOWN ARROWS)
+   14. CUSTOM NUMBER STEPPER (UP / DOWN ARROWS)
    ---------------------------------------------------- */
 .number-stepper {
   display: flex;
@@ -1151,11 +1220,7 @@ button.control-btn.reset {
   font-size: 1.1rem;
   color: var(--red);
   background: transparent;
-}
-
-.number-stepper input[type="number"] {
   -webkit-appearance: none;
-  appearance: none;
   -moz-appearance: textfield;
   appearance: textfield;
 }
@@ -1214,36 +1279,39 @@ button.control-btn.reset {
   box-shadow: none;
 }
 
+/* ----------------------------------------------------
+   15. WAITING STATUS CARD
+   ---------------------------------------------------- */
 #waitingStatusText {
-    text-align: center;
-    line-height: 1.25;
+  text-align: center;
+  line-height: 1.25;
 }
 
 #waitingStatusText .waiting-kicker {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    opacity: 0.75;
-    margin-bottom: 6px;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 6px;
 }
 
 #waitingStatusText .waiting-school {
-    display: block;
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 1.05rem;
-    text-transform: uppercase;
-    text-wrap: balance;
-    margin-bottom: 6px;
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  text-wrap: balance;
+  margin-bottom: 6px;
 }
 
 #waitingStatusText .waiting-team {
-    display: inline-block;
-    font-size: 0.9rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    opacity: 0.85;
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
 }

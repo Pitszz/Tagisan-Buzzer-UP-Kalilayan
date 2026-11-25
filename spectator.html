@@ -31,6 +31,14 @@
                     <div class="spectator-sub">Paghasa ng Bayan &bull; 41st Edition</div>
                 </div>
             </div>
+            <button type="button" id="fullscreenBtn" class="fullscreen-btn spectator-fullscreen-btn hidden" aria-label="Enter fullscreen" title="Fullscreen">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" aria-hidden="true">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+            </button>
         </div>
 
         <!-- Teams Container Wrapper with Overlapping Round Badge -->
@@ -43,15 +51,25 @@
     </div>
 
     <script src="back-navigation.js"></script>
+    <script src="client-utils.js"></script>
     <script>
+        // ====================================================
+        // 1. CONNECTION & NAVIGATION SETUP
+        // ====================================================
         const socket = io();
         setupBackToMenuFallback({ getSocket: () => socket });
+        setupFullscreenButton('fullscreenBtn');
+
         const DEFAULT_SCHOOL_LOGO = 'assets/brand/upk-logo.png';
-        let previousBuzzState = {}; // Track who was buzzed previously
+        let previousBuzzState = {}; // Track buzzed schools (not socket IDs) so reconnects don't replay audio
+        let hasInitialState = false;
         let schoolLogos = {};
         let schoolLogosLoaded = false;
         let latestGameState = null;
 
+        // ====================================================
+        // 2. SCHOOL LOGO RESOLUTION
+        // ====================================================
         socket.on('schoolLogos', (logos) => {
             schoolLogos = logos || {};
             schoolLogosLoaded = true;
@@ -61,7 +79,7 @@
         });
 
         function getSchoolLogoHTML(schoolName) {
-            // "Quezon Science High School" -> "quezon-science-high-school"
+            // Match README slug format: "Quezon Science High School" -> "quezon-science-high-school"
             const slug = (schoolName || '')
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
@@ -74,81 +92,13 @@
             return `<img src="${logoSrc}" alt="${altText}" onerror="this.onerror=null;this.src='${DEFAULT_SCHOOL_LOGO}';">`;
         }
 
-        // Initialize the browser's Audio Context
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new AudioContext();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        // Programmatically synthesize quiz show sounds
-        function playSound(type) {
-            initAudio();
-            if (!audioCtx) return;
-
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            if (type === 'buzz') {
-                // Sharp Arcade Buzzer Beep
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(320, now);
-                osc.frequency.exponentialRampToValueAtTime(160, now + 0.25);
-                
-                gainNode.gain.setValueAtTime(0.25, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                
-                osc.start(now);
-                osc.stop(now + 0.25);
-            } 
-            else if (type === 'correct') {
-                // Pleasant Upward Chime (Major Arpeggio)
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);       // C5
-                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
-                osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
-                
-                gainNode.gain.setValueAtTime(0.15, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-                
-                osc.start(now);
-                osc.stop(now + 0.45);
-            } 
-            else if (type === 'wrong') {
-                // Low Descending Error Thud/Buzz
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(180, now);
-                osc.frequency.setValueAtTime(110, now + 0.15);
-                
-                gainNode.gain.setValueAtTime(0.2, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                
-                osc.start(now);
-                osc.stop(now + 0.35);
-            }
-        }
-
+        // ====================================================
+        // 3. STAGE RENDERING & BUZZ AUDIO CUE
+        // ====================================================
         function renderGameState(gameState) {
             const titleEl = document.getElementById('displayTitle');
             if (gameState.title) {
                 titleEl.textContent = gameState.title;
-                const match = gameState.title.match(/^(.*?)\s+(quiz show.*)$/i);
-                // if (match) {
-                //     titleEl.innerHTML = `<span class="title-line-1">${match[1]}</span><span class="title-line-2">${match[2]}</span>`;
-                // } else {
-                //     titleEl.innerHTML = `<span class="title-line-1">${gameState.title}</span>`;
-                // }
             }
 
             const containerEl = document.getElementById('teamsContainer');
@@ -164,6 +114,7 @@
                 const isBuzzed = p.status === 'buzzed';
                 column.className = `team-column ${isBuzzed ? 'buzzed' : ''}`;
 
+                // Scores stay hidden on the projector stage; re-add .team-score-section if needed
                 column.innerHTML = `
                     <div class="team-header-group">
                         <div class="team-number-badge">Team #${p.number}</div>
@@ -173,11 +124,6 @@
                         ${getSchoolLogoHTML(p.school)}
                     </div>
                 `;
-                    // remove score for now sa spectator
-                    // <div class="team-score-section">
-                    //     <div class="score-label">Score</div>
-                    //     <div class="score-val">${p.score || 0}</div>
-                    // </div>
                 containerEl.appendChild(column);
             });
         }
@@ -188,16 +134,18 @@
 
             if (gameState.players) {
                 gameState.players.forEach((p) => {
-                    // Check if a player just buzzed in
                     if (p.status === 'buzzed') {
-                        currentBuzzState[p.id] = true;
-                        if (!previousBuzzState[p.id]) {
-                            playSound('buzz'); 
+                        const teamKey = String(p.school || '').trim().toLowerCase();
+                        currentBuzzState[teamKey] = true;
+                        if (hasInitialState && !previousBuzzState[teamKey]) {
+                            playSound('buzz');
+                            triggerVibration(200);
                         }
                     }
                 });
             }
-            previousBuzzState = currentBuzzState; // Update state tracker
+            previousBuzzState = currentBuzzState;
+            hasInitialState = true;
 
             renderGameState(gameState);
         });

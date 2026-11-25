@@ -2,23 +2,7 @@
   "title": "Tagisan 41 Quiz Show",
   "players": [
     {
-      "id": "wpBfYa7aPMcZr9UjAAAJ",
-      "school": "Dolores Macasaet National High School",
-      "number": "1",
-      "score": 1,
-      "status": "locked",
-      "connected": false
-    },
-    {
-      "id": "UUE3SXi7f5dDKOHpAAAN",
-      "school": "Philippine Tong Ho Institute Inc.",
-      "number": "17",
-      "score": 0,
-      "status": "locked",
-      "connected": false
-    },
-    {
-      "id": "YP9PrA7zI_CUZ8GvAAAH",
+      "id": "-HB2Av_cUzGaI7lLAABC",
       "school": "Guinayangan National High School",
       "number": "13",
       "score": 0,
@@ -26,10 +10,18 @@
       "connected": true
     },
     {
-      "id": "rBpbQksxxBlFx_4NAAAO",
+      "id": "8ZlVfJdmeLDgO7S7AAAx",
       "school": "Quezon Science High School",
       "number": "13",
-      "score": 10,
+      "score": 1,
+      "status": "locked",
+      "connected": true
+    },
+    {
+      "id": "IICEJs_97B5lzszTAABD",
+      "school": "Quezon National High School",
+      "number": "15",
+      "score": 4,
       "status": "locked",
       "connected": true
     }

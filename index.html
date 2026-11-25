@@ -195,7 +195,7 @@
                 <input type="text" id="customSchoolInput" placeholder="UP Diliman...">
             </div>
 
-            <label for="playerNumber" style="margin-top: 4px;">Assigned Number</label>
+            <label for="teamNumberInput" style="margin-top: 4px;">Assigned Number</label>
             <div class="number-stepper">
                 <input type="number" id="teamNumberInput" min="1" max="99" value="1" required>
                 <div class="stepper-arrows">
@@ -245,6 +245,9 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // ====================================================
+        // 1. SOCKET & CUSTOM SCHOOL DROPDOWN
+        // ====================================================
         const socket = io();
         const dropdownWrapper = document.getElementById('schoolDropdown');
         const dropdownTrigger = document.getElementById('schoolSelectTrigger');
@@ -252,21 +255,21 @@
         const dropdownLabel = document.getElementById('schoolSelectLabel');
         const hiddenSchoolInput = document.getElementById('schoolSelect');
 
+        let cachedSchools = [];
+        let activeSchools = new Set();
+
         dropdownTrigger.addEventListener('click', () => {
             dropdownWrapper.classList.toggle('open');
             dropdownMenu.classList.toggle('hidden');
         });
 
-        // Close dropdown when clicking outside
+        // Close dropdown when clicking anywhere outside it
         document.addEventListener('click', (e) => {
             if (!dropdownWrapper.contains(e.target)) {
                 dropdownWrapper.classList.remove('open');
                 dropdownMenu.classList.add('hidden');
             }
         });
-
-        let cachedSchools = [];
-        let activeSchools = new Set();
 
         function renderSchoolOptions() {
             dropdownMenu.innerHTML = '';
@@ -292,7 +295,7 @@
                         dropdownWrapper.classList.remove('open');
                         dropdownMenu.classList.add('hidden');
 
-                        handleSchoolChange(); // Directly show/hide the custom school input
+                        handleSchoolChange();
                     });
                 }
 
@@ -315,20 +318,10 @@
             renderSchoolOptions();
         });
 
-        function stepTeamNumber(delta) {
-            const input = document.getElementById('teamNumberInput');
-            const min = parseInt(input.min, 10) || 1;
-            const max = parseInt(input.max, 10) || 99;
-            const current = parseInt(input.value, 10) || min;
-            const next = Math.min(max, Math.max(min, current + delta));
-            input.value = next;
-        }
-
-        // Show/hide manual input field depending on selection
         function handleSchoolChange() {
             const selectEl = document.getElementById('schoolSelect');
             const customContainer = document.getElementById('customSchoolContainer');
-            
+
             if (selectEl.value === "OTHER") {
                 customContainer.classList.remove('hidden');
             } else {
@@ -337,18 +330,9 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            // Check if there is a saved player profile in localStorage
-            const savedSchool = localStorage.getItem('quizPlayerSchool');
-            const savedNumber = localStorage.getItem('quizPlayerNumber');
-
-            if (savedSchool && savedNumber) {
-                document.getElementById('mainMenu').classList.add('hidden');
-                document.getElementById('savedProfileCard').classList.remove('hidden');
-                document.getElementById('savedProfileText').innerHTML = `<b>${savedSchool}</b> <br>Team #${savedNumber}`;
-            }
-        });
-
+        // ====================================================
+        // 2. VIEW SWITCHING & HOST AUTH
+        // ====================================================
         function switchView(viewName) {
             document.getElementById('mainMenu').classList.add('hidden');
             document.getElementById('joinView').classList.add('hidden');
@@ -360,7 +344,7 @@
             } else if (viewName === 'join') {
                 document.getElementById('joinView').classList.remove('hidden');
             } else if (viewName === 'host') {
-                // If already unlocked in this tab session, go straight in
+                // Skip the password screen if this browser tab already unlocked host mode
                 if (sessionStorage.getItem('quizHostPassword')) {
                     window.location.href = 'host.html';
                     return;
@@ -388,26 +372,41 @@
             });
         }
 
-        function joinWithSavedProfile() {
-            const school = localStorage.getItem('quizPlayerSchool');
-            const number = localStorage.getItem('quizPlayerNumber');
-
+        // ====================================================
+        // 3. PLAYER JOIN, REJOIN & SAVED PROFILE
+        // ====================================================
+        function startJoining(school, number, { kicker, fromViewId, saveProfile }) {
             socket.emit('checkSchoolAvailability', school, (res) => {
                 if (res && !res.ok) {
                     alert(res.message || `${school} is already active in the game.`);
                     return;
                 }
 
-                document.getElementById('savedProfileCard').classList.add('hidden');
+                if (saveProfile) {
+                    localStorage.setItem('quizPlayerSchool', school);
+                    localStorage.setItem('quizPlayerNumber', number);
+                }
+
+                document.getElementById(fromViewId).classList.add('hidden');
                 document.getElementById('waitingView').classList.remove('hidden');
                 document.getElementById('waitingStatusText').innerHTML = `
-                    <span class="waiting-kicker">REJOINING AS</span>
+                    <span class="waiting-kicker">${kicker}</span>
                     <span class="waiting-school">${school.toUpperCase()}</span>
                     <span class="waiting-team">TEAM #${number}</span>
                 `;
                 setTimeout(() => {
                     window.location.href = 'player.html';
                 }, 500);
+            });
+        }
+
+        function joinWithSavedProfile() {
+            const school = localStorage.getItem('quizPlayerSchool');
+            const number = localStorage.getItem('quizPlayerNumber');
+            startJoining(school, number, {
+                kicker: 'REJOINING AS',
+                fromViewId: 'savedProfileCard',
+                saveProfile: false
             });
         }
 
@@ -422,38 +421,20 @@
             const selectValue = document.getElementById('schoolSelect').value;
             let school = selectValue;
 
-            // If "Other" is selected, grab the text from the manual input box
             if (selectValue === "OTHER") {
                 school = document.getElementById('customSchoolInput').value.trim();
             }
 
             const number = parseInt(document.getElementById('teamNumberInput').value, 10);
-
             if (!school || !number || number < 1 || number > 99) {
                 alert('Please select your school and enter a valid team number (1 to 99).');
                 return;
             }
 
-            socket.emit('checkSchoolAvailability', school, (res) => {
-                if (res && !res.ok) {
-                    alert(res.message || `${school} is already active in the game.`);
-                    return;
-                }
-
-                // Save info locally for persistence
-                localStorage.setItem('quizPlayerSchool', school);
-                localStorage.setItem('quizPlayerNumber', number);
-
-                document.getElementById('joinView').classList.add('hidden');
-                document.getElementById('waitingView').classList.remove('hidden');
-                document.getElementById('waitingStatusText').innerHTML = `
-                    <span class="waiting-kicker">JOINING AS</span>
-                    <span class="waiting-school">${school.toUpperCase()}</span>
-                    <span class="waiting-team">TEAM #${number}</span>
-                `;
-                setTimeout(() => {
-                    window.location.href = 'player.html';
-                }, 500);
+            startJoining(school, number, {
+                kicker: 'JOINING AS',
+                fromViewId: 'joinView',
+                saveProfile: true
             });
         }
 
@@ -480,22 +461,33 @@
 
         window.addEventListener('DOMContentLoaded', restoreInitialView);
 
+        // Re-sync UI when navigating back via browser bfcache
         window.addEventListener('pageshow', (event) => {
             if (event.persisted) {
                 restoreInitialView();
             }
         });
 
+        // ====================================================
+        // 4. TEAM NUMBER STEPPER & INPUT VALIDATION
+        // ====================================================
+        function stepTeamNumber(delta) {
+            const input = document.getElementById('teamNumberInput');
+            const min = parseInt(input.min, 10) || 1;
+            const max = parseInt(input.max, 10) || 99;
+            const current = parseInt(input.value, 10) || min;
+            input.value = Math.min(max, Math.max(min, current + delta));
+        }
+
         const teamNumberInput = document.getElementById('teamNumberInput');
 
-        // Strip non-digits, block leading zero, and cap at 2 digits (1–99) without snapping to 99
+        // Allow only 1–99 (strip non-digits, leading zeros, and digits past 2 chars)
         teamNumberInput.addEventListener('input', () => {
             let digitsOnly = teamNumberInput.value.replace(/\D/g, '');
-            digitsOnly = digitsOnly.replace(/^0+/, ''); // Prevent 0 or leading 0s (e.g., 05 -> 5)
-            teamNumberInput.value = digitsOnly.slice(0, 2); // Ignore 3rd digit instead of jumping to 99
+            digitsOnly = digitsOnly.replace(/^0+/, '');
+            teamNumberInput.value = digitsOnly.slice(0, 2);
         });
 
-        // If left blank when clicking away, default back to 1
         teamNumberInput.addEventListener('blur', () => {
             const num = parseInt(teamNumberInput.value, 10);
             if (!num || num < 1) {

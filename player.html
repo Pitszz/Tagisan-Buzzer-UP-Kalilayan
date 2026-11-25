@@ -6,9 +6,9 @@
     <title>Tagisan 41 Quiz Show - Player Buzzer</title>
     <link rel="stylesheet" href="tagisan.css">
     <!-- Preload buzzer faces so state changes never flash blank -->
-    <link rel="preload" as="image" href="assets/buzzer/buzzer-ready.png">
-    <link rel="preload" as="image" href="assets/buzzer/buzzer-buzzed.png">
-    <link rel="preload" as="image" href="assets/buzzer/buzzer-locked.png">
+    <link rel="preload" as="image" href="assets/buzzer/rm-ready.png">
+    <link rel="preload" as="image" href="assets/buzzer/rm-buzzed.png">
+    <link rel="preload" as="image" href="assets/buzzer/rm-locked.png">
     <style>
         body {
             display: flex;  
@@ -20,6 +20,13 @@
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
+            overscroll-behavior-y: contain;
+            animation: paperGrainDrift 24s linear infinite;
+        }
+
+        @keyframes paperGrainDrift {
+            0% { background-position: 0 0, 0 0, 0 0; }
+            100% { background-position: 32px 32px, -32px -32px, 40px 40px; }
         }
 
         .header {
@@ -52,24 +59,11 @@
             text-align: center;
         }
 
-        .header-spacer {
+        .header-right {
             width: 58px;
-        }
-
-        .player-tag span {
-            color: var(--red);
-        }
-
-        .player-tag .player-badge-pill,
-        .player-tag .player-badge-pill span {
-            color: var(--cream);
-        }
-
-        .player-badge-pill {
-            background-color: var(--red);
-            padding: 2px 8px;
-            display: inline-block;
-            margin-left: 6px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
         }
 
         .footer-info {
@@ -91,7 +85,16 @@
         <div class="player-tag">
             <span id="displaySchool">Loading School...</span>
         </div>
-        <div class="header-spacer" aria-hidden="true"></div>
+        <div class="header-right">
+            <button type="button" id="fullscreenBtn" class="fullscreen-btn hidden" aria-label="Enter fullscreen" title="Fullscreen">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" aria-hidden="true">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+            </button>
+        </div>
         <!-- hide leave button -->
         <!-- <a href="#" onclick="confirmBackToMainMenu(event)" class="back-link">Leave</a> -->
     </div>
@@ -110,9 +113,14 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="back-navigation.js"></script>
+    <script src="client-utils.js"></script>
     <script>
+        // ====================================================
+        // 1. SESSION & CONNECTION SETUP
+        // ====================================================
         const socket = io();
         setupBackToMenuFallback({ getSocket: () => socket });
+        setupFullscreenButton('fullscreenBtn');
 
         const school = localStorage.getItem('quizPlayerSchool') || 'Unknown School';
         const number = localStorage.getItem('quizPlayerNumber') || '1';
@@ -121,11 +129,11 @@
         document.getElementById('displayNumber').textContent = number;
 
         let buzzerState = 'locked';
-        let previousBuzzerState = 'locked';
+        let hasPendingBuzz = false;
 
-        // Register/re-register player on initial connect and any automatic reconnect
+        // Re-register on initial connect and any automatic Socket.IO reconnects
         socket.on('connect', () => {
-            socket.emit('playerJoin', { school: school, number: number });
+            socket.emit('playerJoin', { school, number });
         });
 
         socket.on('joinError', (err) => {
@@ -136,15 +144,24 @@
             window.location.replace('index.html');
         });
 
-        // Listen for state updates from the server
+        // ====================================================
+        // 2. GAME STATE SYNC & BUZZER ACTION
+        // ====================================================
         socket.on('updateState', (gameState) => {
             const normalizedSchool = school.trim().toLowerCase();
             const me = gameState.players.find(
                 p => p.id === socket.id || String(p.school || '').trim().toLowerCase() === normalizedSchool
             );
             if (me) {
-                buzzerState = me.status; // 'ready', 'buzzed', or 'locked'
-                previousBuzzerState = buzzerState;
+                buzzerState = me.status; // 'ready' | 'buzzed' | 'locked'
+                // Only play the ring-in chime and vibrate in response to an active buzz from this tab
+                if (buzzerState === 'buzzed' && hasPendingBuzz) {
+                    playSound('buzz');
+                    triggerVibration(200);
+                }
+                if (buzzerState !== 'ready') {
+                    hasPendingBuzz = false;
+                }
                 updateBuzzerUI();
             }
         });
@@ -152,90 +169,8 @@
         function pressBuzzer() {
             if (buzzerState !== 'ready') return;
 
-            playSound('buzz'); // Play local sound immediately
-            triggerVibration(200);
-
-            socket.emit('playerBuzz');
-        }
-
-        // Initialize the browser's Audio Context
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new AudioContext();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        // Programmatically synthesize quiz show sounds
-        function playSound(type) {
-            initAudio();
-            if (!audioCtx) return;
-
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            if (type === 'buzz') {
-                // Sharp Arcade Buzzer Beep
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(320, now);
-                osc.frequency.exponentialRampToValueAtTime(160, now + 0.25);
-                
-                gainNode.gain.setValueAtTime(0.25, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                
-                osc.start(now);
-                osc.stop(now + 0.25);
-            } 
-            else if (type === 'correct') {
-                // Pleasant Upward Chime (Major Arpeggio)
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);       // C5
-                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
-                osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
-                
-                gainNode.gain.setValueAtTime(0.15, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-                
-                osc.start(now);
-                osc.stop(now + 0.45);
-            } 
-            else if (type === 'wrong') {
-                // Low Descending Error Thud/Buzz
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(180, now);
-                osc.frequency.setValueAtTime(110, now + 0.15);
-                
-                gainNode.gain.setValueAtTime(0.2, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                
-                osc.start(now);
-                osc.stop(now + 0.35);
-            }
-        }
-
-        // Helper for haptic vibration
-        function triggerVibration(pattern = 200) {
-            if ("vibrate" in navigator) {
-                try {
-                    navigator.vibrate(pattern);
-                } catch (err) {
-                    console.log("Vibration not supported or blocked:", err);
-                }
-            }
-        }
-
-        function handleBuzz() {
-            triggerVibration(200); // 200ms pulse
+            hasPendingBuzz = true;
+            unlockAudio();
             socket.emit('playerBuzz');
         }
 
@@ -243,7 +178,7 @@
             const btn = document.getElementById('buzzerBtn');
             const banner = document.getElementById('statusBanner');
 
-            btn.className = 'buzzer-btn';
+            btn.classList.remove('buzzed', 'locked');
 
             if (buzzerState === 'ready') {
                 btn.disabled = false;
@@ -267,7 +202,6 @@
                 banner.style.borderColor = "var(--halftone)";
             }
         }
-
     </script>
 </body>
 </html>
