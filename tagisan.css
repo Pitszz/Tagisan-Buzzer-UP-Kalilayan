@@ -1036,7 +1036,7 @@ button.score-toggle-btn.active {
 }
 .team-column.rank-1 .team-school {
   color: var(--cream);
-  font-size: clamp(1.5rem, 1.8vw, 2.0rem);
+  font-size: clamp(1.1rem, 1.6vw, 1.8rem);
 }
 .team-column.rank-1 .team-number-badge {
   background-color: var(--cream);
@@ -1044,8 +1044,6 @@ button.score-toggle-btn.active {
   border-color: var(--cream);
 }
 .team-column.rank-1 .school-logo {
-  width: 268px;
-  height: 268px;
   border-color: var(--cream);
   box-shadow: 0 0 0 4px var(--red), 0 0 0 8px var(--cream);
 }
@@ -1148,7 +1146,7 @@ button.score-toggle-btn.active {
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  background-color: var(--cream);
+  background-color: white;
   border: 4px solid var(--red);
   display: flex;
   align-items: center;

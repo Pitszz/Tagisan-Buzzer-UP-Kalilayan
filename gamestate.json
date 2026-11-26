@@ -2,7 +2,7 @@
   "title": "tagisan 41 quiz show",
   "players": [
     {
-      "id": "dh6ztqL6DccCjfXKAABf",
+      "id": "9YgB7iK5L1YlAGdxAAAA",
       "school": "Quezon Science High School",
       "number": "13",
       "score": 0,
@@ -10,33 +10,25 @@
       "connected": true
     },
     {
-      "id": "llKnWzT_lArfN5qzAABd",
-      "school": "SLSU - Laboratory School",
-      "number": "1",
-      "score": 0,
-      "status": "locked",
-      "connected": true
-    },
-    {
-      "id": "ENZn50fQcU4gwDuHAABh",
-      "school": "St. Joseph Academy of Sariaya, Quezon",
+      "id": "TvmbNepy1ucNcBieAAAD",
+      "school": "Lopez National Comprehensive High School",
       "number": "15",
       "score": 0,
       "status": "locked",
-      "connected": false
+      "connected": true
     },
     {
-      "id": "5CqXT2f-onJe-J5AAABl",
-      "school": "Gov. Anacleto C. Alcala National High School",
-      "number": "67",
+      "id": "_0b5H6A4CIM82zdWAAAd",
+      "school": "St. Francis High School",
+      "number": "1",
       "score": 0,
       "status": "locked",
       "connected": true
     },
     {
-      "id": "VK9-LgWdcoPytohQAABp",
-      "school": "Maryhill College, Inc.",
-      "number": "1",
+      "id": "wGFG-nLdQ5sWMm02AAAe",
+      "school": "CSTC - Sariaya, Inc.",
+      "number": "13",
       "score": 0,
       "status": "locked",
       "connected": true
