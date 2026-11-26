@@ -4,7 +4,51 @@
  */
 (function (global) {
     const AudioCtx = global.AudioContext || global.webkitAudioContext;
+    // 1-sample 16-bit mono 22050Hz silent PCM WAV to unlock iOS Safari's media audio session
+    const SILENT_WAV_DATA_URI = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQIAAAAAAA==";
     let audioCtx = null;
+    let silentAudioUnlocked = false;
+    let silentAudioEl = null;
+
+    function isIOSDevice() {
+        const nav = global.navigator;
+        if (!nav) return false;
+        return /iPad|iPhone|iPod/.test(nav.userAgent || "") ||
+            (nav.platform === "MacIntel" && nav.maxTouchPoints > 1);
+    }
+
+    // Use the media playback session on iOS 17+ so Web Audio is audible even with the silent switch on
+    function ensurePlaybackAudioSession() {
+        try {
+            if (global.navigator && global.navigator.audioSession && global.navigator.audioSession.type !== "playback") {
+                global.navigator.audioSession.type = "playback";
+            }
+        } catch (_) {
+            // Safe to ignore when AudioSession API is unavailable or restricted
+        }
+    }
+
+    function unlockSilentHtmlAudio() {
+        if (silentAudioUnlocked || !isIOSDevice()) return;
+        try {
+            if (!silentAudioEl) {
+                silentAudioEl = new Audio(SILENT_WAV_DATA_URI);
+                silentAudioEl.playsInline = true;
+                silentAudioEl.setAttribute("playsinline", "");
+                silentAudioEl.preload = "auto";
+            }
+            const playPromise = silentAudioEl.play();
+            if (playPromise && typeof playPromise.then === "function") {
+                playPromise.then(() => {
+                    silentAudioUnlocked = true;
+                }).catch(() => {});
+            } else {
+                silentAudioUnlocked = true;
+            }
+        } catch (_) {
+            // Ignore if blocked outside a valid user gesture
+        }
+    }
 
     function isAudioUnlocked() {
         return Boolean(audioCtx && audioCtx.state === "running");
@@ -12,40 +56,46 @@
 
     function getAudioContext() {
         if (!AudioCtx) return null;
-        if (!audioCtx) {
+        if (!audioCtx || audioCtx.state === "closed") {
             audioCtx = new AudioCtx();
         }
         return audioCtx;
     }
 
+    function primeSilentBuffer(ctx) {
+        try {
+            const buffer = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+        } catch (_) {
+            // Safe to ignore if context isn't ready yet
+        }
+        return ctx;
+    }
+
     // Unlock Web Audio on a user gesture (required by iOS Safari and browser autoplay rules).
     function unlockAudio() {
+        ensurePlaybackAudioSession();
+        unlockSilentHtmlAudio();
+
         const ctx = getAudioContext();
         if (!ctx) return Promise.resolve(null);
 
-        const primeSilentBuffer = () => {
-            try {
-                const buffer = ctx.createBuffer(1, 1, 22050);
-                const source = ctx.createBufferSource();
-                source.buffer = buffer;
-                source.connect(ctx.destination);
-                source.start(0);
-            } catch (_) {
-                // Safe to ignore if context isn't ready yet
-            }
-            return ctx;
-        };
+        // Prime synchronously inside the gesture first, then resume if suspended/interrupted (iOS)
+        primeSilentBuffer(ctx);
 
-        if (ctx.state === "suspended") {
-            return ctx.resume().then(primeSilentBuffer).catch(() => ctx);
+        if (ctx.state !== "running") {
+            return ctx.resume().then(() => primeSilentBuffer(ctx)).catch(() => ctx);
         }
-        return Promise.resolve(primeSilentBuffer());
+        return Promise.resolve(ctx);
     }
 
-    // Automatically unlock audio on the user's first tap, click, or keypress anywhere on the page
-    ["touchstart", "pointerdown", "click", "keydown"].forEach((evt) => {
+    // Unlock audio on valid user-activation gestures (avoid touchstart/pointerdown which fail iOS unlock)
+    ["touchend", "mouseup", "click", "keydown"].forEach((evt) => {
         document.addEventListener(evt, () => {
-            if (!isAudioUnlocked()) {
+            if (!isAudioUnlocked() || (isIOSDevice() && !silentAudioUnlocked)) {
                 unlockAudio();
             }
         }, { passive: true });
@@ -108,7 +158,7 @@
             }
         };
 
-        if (ctx.state === "suspended") {
+        if (ctx.state !== "running") {
             ctx.resume().then(playCue).catch(() => {});
             return;
         }
@@ -116,11 +166,12 @@
     }
 
     function triggerVibration(pattern = 200) {
-        if (!("vibrate" in navigator)) return;
+        if (!global.navigator || typeof global.navigator.vibrate !== "function") return false;
         try {
-            navigator.vibrate(pattern);
+            return Boolean(global.navigator.vibrate(pattern));
         } catch (err) {
             // Ignored on platforms like iOS Safari that don't support navigator.vibrate
+            return false;
         }
     }
 

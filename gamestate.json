@@ -6,7 +6,7 @@
       "school": "Quezon Science High School",
       "number": "13",
       "score": 0,
-      "status": "locked",
+      "status": "ready",
       "connected": true
     },
     {
@@ -14,23 +14,23 @@
       "school": "Lopez National Comprehensive High School",
       "number": "15",
       "score": 0,
-      "status": "locked",
+      "status": "ready",
       "connected": true
     },
     {
-      "id": "_0b5H6A4CIM82zdWAAAd",
-      "school": "St. Francis High School",
+      "id": "11388zx4xVqQHyAzAAAh",
+      "school": "Gov. Anacleto C. Alcala National High School",
       "number": "1",
       "score": 0,
-      "status": "locked",
+      "status": "ready",
       "connected": true
     },
     {
-      "id": "wGFG-nLdQ5sWMm02AAAe",
-      "school": "CSTC - Sariaya, Inc.",
-      "number": "13",
+      "id": "fnniPCSkStiQcuBqAAAu",
+      "school": "Guinayangan National High School",
+      "number": "17",
       "score": 0,
-      "status": "locked",
+      "status": "ready",
       "connected": true
     }
   ],

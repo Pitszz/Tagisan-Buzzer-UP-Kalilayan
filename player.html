@@ -134,7 +134,12 @@
 
         // Re-register on initial connect and any automatic Socket.IO reconnects
         socket.on('connect', () => {
+            hasPendingBuzz = false;
             socket.emit('playerJoin', { school, number });
+        });
+
+        socket.on('disconnect', () => {
+            hasPendingBuzz = false;
         });
 
         socket.on('joinError', (err) => {
@@ -155,11 +160,6 @@
             );
             if (me) {
                 buzzerState = me.status; // 'ready' | 'buzzed' | 'locked'
-                // Only play the ring-in chime and vibrate in response to an active buzz from this tab
-                if (buzzerState === 'buzzed' && hasPendingBuzz) {
-                    playSound('buzz');
-                    triggerVibration(200);
-                }
                 if (buzzerState !== 'ready') {
                     hasPendingBuzz = false;
                 }
@@ -168,10 +168,14 @@
         });
 
         function pressBuzzer() {
-            if (buzzerState !== 'ready') return;
+            if (buzzerState !== 'ready' || hasPendingBuzz) return;
 
             hasPendingBuzz = true;
+            // Play sound and trigger haptic vibration synchronously inside the click gesture
+            // so iOS Safari (Web Audio) and Android browsers (vibrate + audio) never block them.
             unlockAudio();
+            playSound('buzz');
+            triggerVibration(200);
             socket.emit('playerBuzz');
         }
 
