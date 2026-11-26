@@ -2,39 +2,31 @@
   "title": "tagisan 41 quiz show",
   "players": [
     {
-      "id": "9YgB7iK5L1YlAGdxAAAA",
+      "id": "6xUQD0XqgROaM-JgAAAE",
       "school": "Quezon Science High School",
       "number": "13",
       "score": 0,
-      "status": "ready",
+      "status": "locked",
       "connected": true
     },
     {
-      "id": "TvmbNepy1ucNcBieAAAD",
-      "school": "Lopez National Comprehensive High School",
-      "number": "15",
-      "score": 0,
-      "status": "ready",
-      "connected": true
-    },
-    {
-      "id": "11388zx4xVqQHyAzAAAh",
-      "school": "Gov. Anacleto C. Alcala National High School",
-      "number": "1",
-      "score": 0,
-      "status": "ready",
-      "connected": true
-    },
-    {
-      "id": "fnniPCSkStiQcuBqAAAu",
+      "id": "rDE6OR-smu4T-ZEgAAAM",
       "school": "Guinayangan National High School",
       "number": "17",
       "score": 0,
-      "status": "ready",
-      "connected": true
+      "status": "locked",
+      "connected": false
+    },
+    {
+      "id": "JZ2pX3rqGMUPaiRnAAAH",
+      "school": "Dolores Macasaet National High School",
+      "number": "1",
+      "score": 0,
+      "status": "locked",
+      "connected": false
     }
   ],
   "wrongAttempts": 0,
   "failedTeamKeys": [],
-  "showScores": true
+  "showScores": false
 }

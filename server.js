@@ -76,6 +76,13 @@ function saveGameState() {
 
 let gameState = loadGameState();
 
+function lockAllUnlessBuzzed() {
+    const anyoneBuzzed = gameState.players.some(p => p.status === 'buzzed');
+    if (!anyoneBuzzed) {
+        gameState.players.forEach(p => { p.status = 'locked'; });
+    }
+}
+
 // ====================================================
 // 2. SCHOOL & LOGO HELPERS
 // ====================================================
@@ -175,12 +182,6 @@ io.on('connection', (socket) => {
 
         const playerNum = String(playerData.number);
         const normalizedSchool = normalizeSchoolName(schoolName);
-        const teamKey = getTeamKey({ school: schoolName, number: playerNum });
-
-        const anyoneBuzzed = gameState.players.some(p => p.status === 'buzzed');
-        const roundOpen = !anyoneBuzzed && gameState.players.some(p => p.connected && p.status === 'ready');
-        const hasFailedThisRound = gameState.failedTeamKeys.includes(teamKey);
-        const initialStatus = (roundOpen && !hasFailedThisRound) ? 'ready' : 'locked';
 
         const existing = gameState.players.find(p => normalizeSchoolName(p.school) === normalizedSchool);
 
@@ -189,8 +190,9 @@ io.on('connection', (socket) => {
             existing.school = schoolName;
             existing.number = playerNum;
             existing.connected = true;
+            // Preserve 'buzzed' if the buzzed-in player reconnects; otherwise lock until host unlocks
             if (existing.status !== 'buzzed') {
-                existing.status = initialStatus;
+                existing.status = 'locked';
             }
         } else {
             gameState.players.push({
@@ -198,10 +200,13 @@ io.on('connection', (socket) => {
                 school: schoolName,
                 number: playerNum,
                 score: 0,
-                status: initialStatus,
+                status: 'locked',
                 connected: true
             });
         }
+
+        // Lock everyone on join/reconnect unless someone is currently buzzed in
+        lockAllUnlessBuzzed();
 
         io.emit('schoolLogos', getSchoolLogoMap());
         saveGameState();
@@ -325,6 +330,8 @@ io.on('connection', (socket) => {
         if (!player) return;
 
         player.connected = false;
+        // Lock everyone on player disconnect unless someone is currently buzzed in
+        lockAllUnlessBuzzed();
         saveGameState();
         io.emit('updateState', gameState);
     });
