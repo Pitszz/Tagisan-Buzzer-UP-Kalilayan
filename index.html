@@ -345,10 +345,10 @@
                 document.getElementById('joinView').classList.remove('hidden');
             } else if (viewName === 'host') {
                 // Skip the password screen if this browser tab already unlocked host mode
-                if (sessionStorage.getItem('quizHostPassword')) {
-                    window.location.href = 'host.html';
-                    return;
-                }
+                // if (sessionStorage.getItem('quizHostPassword')) {
+                //     window.location.href = 'host.html';
+                //     return;
+                // }
                 document.getElementById('hostLoginError').classList.add('hidden');
                 document.getElementById('hostPasswordInput').value = '';
                 document.getElementById('hostLoginView').classList.remove('hidden');

@@ -1000,7 +1000,7 @@ button.score-toggle-btn.active {
 .team-column.buzzed {
   background-color: var(--red) !important;
   color: var(--cream) !important;
-  box-shadow: inset 0 0 0 6px var(--cream) !important;
+  /* box-shadow: inset 0 0 0 6px var(--cream) !important; */
   animation: teamBuzzedPulse 1.4s infinite ease-in-out;
 }
 .team-column.buzzed .team-school {

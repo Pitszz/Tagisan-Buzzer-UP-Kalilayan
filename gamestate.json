@@ -2,42 +2,42 @@
   "title": "tagisan 41 quiz show",
   "players": [
     {
-      "id": "1-lQzeCyKokTny7CAAAB",
+      "id": "kstykMQjGnIgHmRsAAAP",
       "school": "Quezon Science High School",
       "number": "13",
-      "score": 15,
+      "score": 4,
       "status": "locked",
       "connected": true
     },
     {
-      "id": "A4-O_SnaGltAEU0wAAAC",
-      "school": "Paaralang Sekundarya ng Lucban Integrated School",
-      "number": "1",
-      "score": 9,
-      "status": "locked",
-      "connected": false
-    },
-    {
-      "id": "uGWCAAkG_XMXsUydAAAL",
-      "school": "Dolores Macasaet National High School",
-      "number": "22",
-      "score": 10,
+      "id": "4fKLyQ3a1S386TSLAAAM",
+      "school": "Lopez National Comprehensive High School",
+      "number": "15",
+      "score": 6,
       "status": "locked",
       "connected": true
     },
     {
-      "id": "40-zi_lROHpIqDOQAAAZ",
+      "id": "54LYaBJhE-85eUrgAAAX",
+      "school": "Guinayangan National High School",
+      "number": "17",
+      "score": 4,
+      "status": "locked",
+      "connected": true
+    },
+    {
+      "id": "g5H-cmaKDgI4-makAAAZ",
+      "school": "St. Joseph Academy of Sariaya, Quezon",
+      "number": "15",
+      "score": 3,
+      "status": "locked",
+      "connected": true
+    },
+    {
+      "id": "MoNBo8qLiY7g6A1GAAAb",
       "school": "Quezon National High School",
-      "number": "15",
-      "score": 0,
-      "status": "ready",
-      "connected": false
-    },
-    {
-      "id": "R4Y6DxpKsuxGtvvHAAAQ",
-      "school": "Gov. Anacleto C. Alcala National High School",
-      "number": "15",
-      "score": 0,
+      "number": "67",
+      "score": 13,
       "status": "locked",
       "connected": true
     }
